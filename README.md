@@ -1,5 +1,7 @@
 # Le Voyage de Vénus
 
+**En ligne : <https://voyage-de-venus.pages.dev>** · code : <https://github.com/leocrapart-pixel/voyage-de-venus>
+
 Une application web qui calcule le **cycle synodique de Vénus** dans le navigateur et le
 raconte comme une descente : celle d'Inanna, qui franchit sept portes et abandonne à
 chacune un vêtement de sa royauté.
@@ -15,9 +17,29 @@ npm run dev        # http://localhost:5180
 ```bash
 npm run build      # SPA statique dans build/
 npm run preview    # http://localhost:4180
-npm test           # 82 tests : éphéméride, cycle, jeu de données, comportement de la page
+npm test           # 89 tests : éphéméride, cycle, jeu de données, pages
 npm run check      # svelte-check / TypeScript
 ```
+
+## Déploiement
+
+Le site est servi par **Cloudflare Pages**, projet `voyage-de-venus`, sur le sous-domaine
+**<https://voyage-de-venus.pages.dev>** (branche de production : `main`).
+
+```bash
+CLOUDFLARE_API_TOKEN=... CLOUDFLARE_ACCOUNT_ID=... npm run deploy
+```
+
+`npm run deploy` construit puis téléverse `build/` avec `wrangler pages deploy`. Le dépôt
+GitHub <https://github.com/leocrapart-pixel/voyage-de-venus> contient les mêmes sources.
+
+Deux notes pour un déploiement manuel :
+
+- Le projet étant en `adapter-static` avec un `index.html` de repli, les routes profondes
+  fonctionnent sans configuration serveur : `build/` est un dossier de fichiers, un point.
+- Juste après un déploiement, la première requête sur un actif peut renvoyer une erreur 522
+  pendant que l'edge se propage ; une seconde requête quelques secondes plus tard sert le
+  fichier normalement. Ce n'est pas un défaut de configuration.
 
 ## Ce que calcule l'application
 

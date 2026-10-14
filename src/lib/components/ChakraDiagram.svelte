@@ -351,6 +351,9 @@
 			>{portals.length > GATE_COUNT
 				? ' — les sept chakras, puis le seuil.'
 				: ' — les sept chakras.'}
+			Les deux moitiés en comptent autant
+			({journey.morning.portals.length} et {journey.evening.portals.length}) : c'est la moitié la plus pauvre qui
+			fixe le compte, et ce que l'autre ne peut pas placer reste dans l'inframonde.
 			{#if activePassage}
 				Portail ouvert : {activePassage.index} · {activePassage.gate.name}, conjonction exacte le
 				{formatDayAndTime(activePassage.at)}.

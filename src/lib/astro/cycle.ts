@@ -70,16 +70,41 @@ export type Star = 'morning' | 'evening';
 export const DEFAULT_ARCUS_VISIONIS = 5;
 
 /**
- * Solar elongation, in degrees, at which a Moon-Venus conjunction becomes a visible portal.
+ * Solar elongation, in degrees, at which a Moon-Venus conjunction becomes a candidate portal.
  *
  * Below this the pair is lost in the twilight and the meeting happens out of sight, so it
- * is recorded but does not open a gate. The value is not tuned to produce a nice number: it
- * is the classical limit of naked-eye visibility for a Venus-Moon pair, and the count of
- * seven or eight portals per half-cycle is what follows from it. Measured over 250 halves
- * between 1900 and 2100, this threshold gives 7 portals 105 times and 8 portals 145 times,
- * and never anything else.
+ * is recorded but opens nothing. The value is not tuned: it is the classical limit of
+ * naked-eye visibility for a Venus-Moon pair.
+ *
+ * On its own this threshold leaves the two halves of a cycle disagreeing — 125 cycles
+ * between 1900 and 2100 give 7-7 only 5 times, 8-8 25 times, and 7-8 or 8-7 the other 95.
+ * The two halves are therefore reconciled explicitly; see `PORTALS_PER_HALF`.
  */
 export const PORTAL_VISIBILITY = 15;
+
+/**
+ * How many portals a cycle holds in each half: seven, or eight when both halves can carry
+ * eight.
+ *
+ * A descent and its mirror should have the same number of gates, and the sky does not
+ * oblige: the two halves of a cycle hold a different number of observable conjunctions in
+ * 76 % of cycles, because the Moon's latitude and Venus's eccentricity do not repeat
+ * between one half and the next. So the count is settled between them, at the smaller of
+ * the two: **7-7 or 8-8, never 7-8**. What the fuller half cannot place falls outside the
+ * descent, in the inframonde.
+ *
+ * The conjunctions that survive are the **first** of each half, counted from the conjunction
+ * that opens it; when a half has one too many, the one dropped is its last. Two reasons:
+ *
+ * - the crown must be the first gate of a half. Keeping by any other measure dropped the
+ *   crown on the evening side and started the ascent at the brow, which is not a descent;
+ * - the last conjunction of a half is the one nearest the next conjunction — the one whose
+ *   meeting already happens in the twilight of the passage into the underworld. It is the
+ *   natural marginal case.
+ */
+export function portalsPerHalf(morningCount: number, eveningCount: number): number {
+	return Math.min(morningCount, eveningCount);
+}
 
 /**
  * Half-width, in hours, of the window around an exact conjunction during which the
@@ -184,10 +209,13 @@ export interface MoonVenusConjunction {
 	/** 1-based rank within its half of the cycle: 1-7 are the chakras, 8 is the threshold. */
 	index: number;
 	/**
-	 * True when this conjunction clears `PORTAL_VISIBILITY` and therefore opens a portal.
-	 * A conjunction that does not is still listed — it happened — but it opens nothing.
+	 * True when this conjunction clears `PORTAL_VISIBILITY`. A candidate, not yet a portal:
+	 * the two halves are then reconciled at the smaller count, so an observable conjunction
+	 * can still fall outside the descent.
 	 */
 	observable: boolean;
+	/** True when this conjunction is one of the portals of the cycle. */
+	portal: boolean;
 	/** Days since the phase began (the inferior or superior conjunction). */
 	dayOfPhase: number;
 }
@@ -205,8 +233,8 @@ export interface Phase {
 	/** Conjunctions of this half, chronological — observable ones and not. */
 	passages: GatePassage[];
 	/**
-	 * The portals of this half: the observable conjunctions, in order. Seven of them, or
-	 * eight when a half holds one extra — in which case the eighth is the threshold.
+	 * The portals of this half, in order: seven of them, or eight when both halves of the
+	 * cycle can carry eight — in which case the eighth is the threshold.
 	 */
 	portals: GatePassage[];
 }
@@ -222,8 +250,10 @@ export interface VenusJourney {
 	arcusVisionis: number;
 	/** Half-width, in hours, of the window during which a gate counts as in progress. */
 	gateWindowHours: number;
-	/** Solar elongation, in degrees, at which a conjunction becomes a visible portal. */
+	/** Solar elongation, in degrees, at which a conjunction becomes a portal candidate. */
 	portalVisibility: number;
+	/** How many portals each half of this cycle holds: seven, or eight. */
+	portalsPerHalf: number;
 	/** Inferior conjunction that opened the cycle containing `date`. */
 	start: Conjunction;
 	/** Inferior conjunction that closes it. */
@@ -554,6 +584,7 @@ export function findMoonVenusConjunctions(from: Date, to: Date): MoonVenusConjun
 			star: starOf(elongation),
 			waxing: elongation > 0,
 			observable: Math.abs(elongation) >= PORTAL_VISIBILITY,
+			portal: false,
 			gate: GATES[0],
 			index: 0,
 			dayOfPhase: 0
@@ -569,6 +600,23 @@ export function findMoonVenusConjunctions(from: Date, to: Date): MoonVenusConjun
  * next the brow, and so on, and the evening half starts again at the crown after the
  * superior conjunction.
  */
+/**
+ * Rank the conjunctions of a cycle, and decide which of them are portals.
+ *
+ * Three steps, in order:
+ *
+ * 1. a conjunction is **observable** when it clears `PORTAL_VISIBILITY`; the others are
+ *    listed but never ranked;
+ * 2. the two halves are counted and reconciled at the smaller number, so a cycle holds
+ *    7-7 or 8-8 and never 7-8;
+ * 3. within each half the portals kept are the ones nearest the underworld — the deepest
+ *    point of the descent — because those are the gates the myth cares about: the last one
+ *    before Venus vanishes, the first one after she returns. The conjunction left out is
+ *    the one furthest from it, in the middle of the crossing.
+ *
+ * Ranks 1 to 7 are the chakras in the order of the descent. Rank 8, when a cycle carries
+ * one, is the threshold: the death on the way down, the life on the way back up.
+ */
 function organise(
 	raw: readonly MoonVenusConjunction[],
 	start: Conjunction,
@@ -581,25 +629,48 @@ function organise(
 		.filter((c) => c.at.getTime() >= start.at.getTime() && c.at.getTime() <= end.at.getTime())
 		.sort((a, b) => a.at.getTime() - b.at.getTime());
 
-	// Only the observable conjunctions are ranked: a meeting buried in the twilight opens no
-	// gate, so it is listed without a rank rather than pushing every later portal down one.
+	const mark = (c: MoonVenusConjunction) => ({
+		...c,
+		observable: Math.abs(c.elongation) >= PORTAL_VISIBILITY
+	});
+
+	// Step 1 and 2: count per half, then settle on the smaller.
+	const candidates = {
+		morning: inCycle.filter((c) => c.star === 'morning' && mark(c).observable),
+		evening: inCycle.filter((c) => c.star === 'evening' && mark(c).observable)
+	};
+	const perHalf = portalsPerHalf(candidates.morning.length, candidates.evening.length);
+
+	// Step 3: each half keeps its first portals, and drops from the end.
+	const keep = new Set<number>();
+	for (const list of [candidates.morning, candidates.evening]) {
+		list
+			.slice()
+			.sort((a, b) => a.at.getTime() - b.at.getTime())
+			.slice(0, perHalf)
+			.forEach((c) => keep.add(c.at.getTime()));
+	}
+
 	let morningRank = 0;
 	let eveningRank = 0;
 	return inCycle.map((c) => {
+		const observable = mark(c).observable;
+		const isPortal = observable && keep.has(c.at.getTime());
 		// Which half a conjunction belongs to is the sign of the elongation — the same test
-		// that names the star for a moment — and the superior conjunction is the phase
-		// boundary that follows from it. Deriving the half from the boundary instead would be
-		// a second, disagreeing source of truth.
-		const rank = c.observable ? (c.star === 'morning' ? ++morningRank : ++eveningRank) : 0;
+		// that names the star for a moment. Deriving it from the superior conjunction instead
+		// would be a second, disagreeing source of truth.
+		const rank = isPortal ? (c.star === 'morning' ? ++morningRank : ++eveningRank) : 0;
 		return {
 			...c,
+			observable,
+			portal: isPortal,
 			index: rank,
 			gate: rank === 0 ? GATES[0] : portalForRank(rank, c.star),
 			dayOfPhase: Math.abs(daysBetween(c.star === 'morning' ? start.at : mid.at, c.at)),
 			// A gate stands open for half a day either side of its exact instant. The instant
 			// itself is always reported to the minute; this window only decides which gate the
 			// interface calls "in progress" right now.
-			open: c.observable && isGateOpen(c.at, now, windowHours)
+			open: isPortal && isGateOpen(c.at, now, windowHours)
 		};
 	});
 }
@@ -629,6 +700,9 @@ export function computeJourney(date: Date, options: JourneyOptions = {}): VenusJ
 		gateWindowHours
 	);
 
+	/** The number of portals each half holds — the same for both, by construction. */
+	const perHalf = passages.filter((p) => p.portal && p.star === 'morning').length;
+
 	const phaseOf = (star: Star): Phase => {
 		const half = passages.filter((p) => p.star === star);
 		const from = star === 'morning' ? start.at : mid.at;
@@ -639,7 +713,7 @@ export function computeJourney(date: Date, options: JourneyOptions = {}): VenusJ
 			end: to,
 			days: daysBetween(from, to),
 			passages: half,
-			portals: half.filter((p) => p.observable)
+			portals: half.filter((p) => p.portal)
 		};
 	};
 
@@ -650,14 +724,14 @@ export function computeJourney(date: Date, options: JourneyOptions = {}): VenusJ
 	// computing the same window is how a passage ends up open in one view and shut in another.
 	const activePassage =
 		passages
-			.filter((p) => p.open && p.observable)
+			.filter((p) => p.open && p.portal)
 			.sort((a, b) => Math.abs(daysBetween(date, a.at)) - Math.abs(daysBetween(date, b.at)))[0] ?? null;
 	// The gate that is next, counting the one standing open right now as still ahead of
 	// the reader until it closes.
 	const nextPassage =
 		activePassage ??
 		passages
-			.filter((p) => p.observable && p.at.getTime() > date.getTime())
+			.filter((p) => p.portal && p.at.getTime() > date.getTime())
 			.sort((a, b) => a.at.getTime() - b.at.getTime())[0] ??
 		null;
 
@@ -677,6 +751,7 @@ export function computeJourney(date: Date, options: JourneyOptions = {}): VenusJ
 		arcusVisionis,
 		gateWindowHours,
 		portalVisibility: PORTAL_VISIBILITY,
+		portalsPerHalf: perHalf,
 		start,
 		mid,
 		end,

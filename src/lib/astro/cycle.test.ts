@@ -408,17 +408,19 @@ describe('gate assignment', () => {
 			const ranks = phase.portals.map((p) => p.index);
 			expect(ranks).toEqual(ranks.slice().sort((a, b) => a - b));
 			expect(ranks[0]).toBe(1);
-			// A half holds seven portals, or eight when one conjunction more clears the threshold.
+			// A half holds seven portals, or eight.
 			expect([GATE_COUNT, GATE_COUNT + 1]).toContain(ranks.length);
 			expect(ranks[ranks.length - 1]).toBe(ranks.length);
 			// Chronological order and rank order agree.
 			const times = phase.portals.map((p) => p.at.getTime());
 			expect(times).toEqual(times.slice().sort((a, b) => a - b));
-			// Every passage of the half is listed, observable or not — but only the observable
-			// ones are ranked.
+			// Every passage of the half is listed — but only the portals are ranked.
 			for (const p of phase.passages) {
 				expect(p.observable).toBe(Math.abs(p.elongation) >= journey.portalVisibility);
-				expect(p.index === 0).toBe(!p.observable);
+				expect(p.portal).toBe(p.index > 0);
+				// A portal must also be observable: reconciling the two halves can only ever
+				// remove candidates, never promote a conjunction buried in the twilight.
+				if (p.portal) expect(p.observable).toBe(true);
 			}
 		}
 	});
@@ -460,8 +462,64 @@ describe('gate assignment', () => {
 		expect(journey.conjunctions.length).toBeGreaterThanOrEqual(19);
 		const portals = journey.morning.portals.length + journey.evening.portals.length;
 		expect(portals).toBeLessThan(journey.conjunctions.length);
-		expect(portals).toBeGreaterThanOrEqual(2 * GATE_COUNT);
-		expect(portals).toBeLessThanOrEqual(2 * GATE_COUNT + 2);
+		expect(portals === 2 * GATE_COUNT || portals === 2 * GATE_COUNT + 2).toBe(true);
+	});
+
+	it('gives both halves the same number of portals — seven, or eight', () => {
+		// The two halves of a cycle disagree about how many observable conjunctions they hold
+		// in 76 % of cycles, so the count is settled between them at the smaller number. A
+		// descent and its mirror have the same number of gates; the rest is the inframonde.
+		const dates = [
+			'2020-06-03T12:00:00Z',
+			'2022-01-09T12:00:00Z',
+			'2023-08-13T12:00:00Z',
+			'2025-03-23T12:00:00Z',
+			'2026-10-24T12:00:00Z',
+			'2028-06-01T12:00:00Z',
+			'2029-12-16T12:00:00Z',
+			'2031-08-11T12:00:00Z',
+			'2033-03-20T12:00:00Z'
+		];
+		for (const iso of dates) {
+			const journey = computeJourney(at(iso));
+			expect(journey.morning.portals.length).toBe(journey.evening.portals.length);
+			expect(journey.portalsPerHalf).toBe(journey.morning.portals.length);
+			expect([GATE_COUNT, GATE_COUNT + 1]).toContain(journey.portalsPerHalf);
+			// Every chakra opens exactly once per half, and no conjunction is left unranked
+			// inside a half that is short of its count.
+			for (const phase of [journey.morning, journey.evening]) {
+				expect(phase.portals.map((p) => p.gate.key).slice(0, GATE_COUNT)).toEqual(
+					GATES.map((g) => g.key)
+				);
+			}
+		}
+	});
+
+	it('keeps the portals from the start of each half, and drops from the end', () => {
+		// When a half holds more candidates than the agreed count, the first ones are kept and
+		// the last is dropped. Two reasons: the crown must be the first gate of a half — any
+		// other rule started the evening ascent at the brow — and the last conjunction of a
+		// half is the one whose meeting already happens in the twilight of the passage into
+		// the underworld.
+		const journey = computeJourney(at('2025-03-23T12:00:00Z'));
+		const dropped = journey.conjunctions.filter((c) => !c.portal);
+		expect(dropped.length).toBeGreaterThan(0);
+
+		for (const phase of [journey.morning, journey.evening]) {
+			// The crown is the first gate of the half, and the order is chronological.
+			expect(phase.portals[0].gate.key).toBe('crown');
+			const times = phase.portals.map((p) => p.at.getTime());
+			expect(times).toEqual([...times].sort((a, b) => a - b));
+
+			// Of the candidates of this half, the ones kept are the earliest: a candidate
+			// dropped for being one too many comes after every portal of the same half.
+			const candidates = phase.passages.filter((p) => p.observable).map((p) => p.at.getTime());
+			const kept = new Set(times);
+			const leftOut = candidates.filter((t) => !kept.has(t)).sort((a, b) => a - b);
+			for (const t of leftOut) {
+				for (const p of phase.portals) expect(p.at.getTime()).toBeLessThan(t);
+			}
+		}
 	});
 
 	it('marks the eighth portal as the threshold of its own direction', () => {
@@ -584,27 +642,6 @@ describe('pairing a gate with its passage', () => {
 			if (both.length < 2) continue;
 			const paired = passageForGate(journey, gate.key)!;
 			expect(paired.star).toBe(journey.star);
-		}
-	});
-
-	it('counts seven or eight portals in a half, every half, over two decades', () => {
-		// The claim that a half of the cycle holds seven or eight portals is the whole shape
-		// of the app, so it is checked across many cycles rather than asserted once.
-		const dates = [
-			'2020-06-03T12:00:00Z',
-			'2022-01-09T12:00:00Z',
-			'2023-08-13T12:00:00Z',
-			'2025-03-23T12:00:00Z',
-			'2026-10-24T12:00:00Z',
-			'2028-06-01T12:00:00Z',
-			'2029-12-16T12:00:00Z',
-			'2031-08-11T12:00:00Z'
-		];
-		for (const iso of dates) {
-			const journey = computeJourney(at(iso));
-			for (const phase of [journey.morning, journey.evening]) {
-				expect([GATE_COUNT, GATE_COUNT + 1]).toContain(phase.portals.length);
-			}
 		}
 	});
 

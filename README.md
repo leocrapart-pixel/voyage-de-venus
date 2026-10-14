@@ -107,7 +107,7 @@ chakra est franchi deux fois : la couronne est ouverte au premier rang, puis de 
 huitième. L'application affiche donc, pour chaque centre, **sa prochaine occurrence** — et
 non la première du cycle, qui serait une date de plusieurs mois dans le passé.
 
-### Sept portails par moitié, ou huit — et le huitième est un seuil
+### Sept portails, ou huit — le même nombre dans les deux moitiés
 
 Un portail n'est pas n'importe quelle conjonction Vénus-Lune. La Lune rencontre Vénus environ
 une fois par mois, soit une dizaine de fois par moitié de cycle : mais une conjonction ne
@@ -115,12 +115,29 @@ compte comme portail que si elle est **observable**. En dessous d'une quinzaine 
 d'élongation au Soleil, le couple est noyé dans le crépuscule et la rencontre a lieu hors de
 vue.
 
-Ce critère unique, appliqué à **250 moitiés de cycle entre 1900 et 2100**, donne
-**7 portails 105 fois et 8 portails 145 fois — jamais autre chose**. La forme du mythe n'est
-donc pas plaquée sur le ciel : elle en découle, d'un seuil qui est observationnel et non
-symbolique.
+Ce premier critère ne suffit pas, et c'est mesurable : sur **125 cycles entre 1900 et 2100**,
+il laisse les deux moitiés en désaccord **76 % du temps** — 7-8 ou 8-7, parce que la latitude
+de la Lune et l'excentricité de Vénus ne se répètent pas d'une moitié à l'autre. Or une
+descente et son miroir ont le même nombre de portes.
 
-Quand une moitié en compte huit, le huitième n'est pas un chakra de plus. C'est le
+Le compte est donc **arbitré entre les deux moitiés, au plus petit** :
+
+| Les deux moitiés | Résultat |
+| --- | --- |
+| 8 et 8 | **8-8** |
+| 7 et 8, ou 8 et 7 | **7-7** |
+| 7 et 7 | **7-7** |
+
+Jamais 7-8. Ce que la moitié la plus riche ne peut pas placer **reste dans l'inframonde** :
+la conjonction est listée — elle a eu lieu — mais elle n'ouvre pas de porte.
+
+Dans chaque moitié, les portails retenus sont **les premiers**, à partir de la conjonction
+qui ouvre la moitié ; celui qu'on retire est le dernier. Deux raisons : la couronne doit être
+la première porte d'une moitié (tout autre critère faisait commencer l'ascension du soir au
+front, ce qui n'est pas une descente), et la dernière conjonction d'une moitié est celle dont
+la rencontre se fait déjà dans le crépuscule du passage vers l'enfers.
+
+Quand un cycle en compte huit, le huitième n'est pas un chakra de plus. C'est le
 **retour** : Inanna remonte changée, et ce qui s'ouvre n'est plus un rang mais une intention.
 
 | Seuil 8 | Ce qu'il est | Ancrage |
@@ -132,15 +149,19 @@ Un seuil n'a volontairement pas la forme d'un chakra : ni nom sanskrit, ni place
 corps, ni vêtement — rien ne lui est retiré. Il est dessiné à part de la figure, en bas de
 l'axe, parce qu'il n'a pas de lieu sur le corps.
 
-Sur le cycle en cours (2025-03-23 → 2026-10-24), le compte tombe exactement ainsi :
+Sur le cycle en cours (2025-03-23 → 2026-10-24), les deux moitiés tombent d'accord sur sept :
 
 | Moitié | Portails | Détail |
 | --- | --- | --- |
 | Matin — la descente | **7** | Couronne 25 avr. · Front 23 mai · Gorge 22 juin · Cœur 21 juil. · Plexus 20 août · Ventre 19 sept. · Racine 19 oct. 2025 |
-| Soir — l'ascension | **8** | Couronne 20 mars · Front 19 avr. · Gorge 19 mai · Cœur 17 juin · Plexus 17 juil. · Ventre 16 août · Racine 14 sept. · **Vie intentionnelle 12 oct. 2026** |
+| Soir — l'ascension | **7** | Couronne 19 avr. · Front 19 mai · Gorge 17 juin · Cœur 17 juil. · Plexus 16 août · Ventre 14 sept. · Racine 12 oct. 2026 |
 
-Les cinq conjonctions restantes du cycle tombent sous le seuil d'observabilité et n'ouvrent
-aucun portail : elles sont listées, parce qu'elles ont eu lieu, mais sans rang.
+Six conjonctions du cycle n'ouvrent aucune porte : cinq sont trop près du Soleil, et une — le
+12 octobre 2026 — est celle que la moitié du soir ne pouvait pas placer. Elle est listée,
+parce qu'elle a eu lieu, mais elle reste dans l'inframonde.
+
+Le cycle ouvert le 13 août 2023, lui, tombe sur huit dans les deux moitiés : la descente
+s'achève sur la **Mort intentionnelle** et l'ascension sur la **Vie intentionnelle**.
 
 ### Un portail est un instant exact
 

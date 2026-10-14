@@ -44,13 +44,17 @@ helper d'identifiants ; sinon `git push` te demandera un nom d'utilisateur et un
 `npm run deploy` construit puis téléverse `build/` avec `wrangler pages deploy`. Le dépôt
 GitHub <https://github.com/leocrapart-pixel/voyage-de-venus> contient les mêmes sources.
 
-Deux notes pour un déploiement manuel :
+Trois notes pour un déploiement manuel :
 
 - Le projet étant en `adapter-static` avec un `index.html` de repli, les routes profondes
   fonctionnent sans configuration serveur : `build/` est un dossier de fichiers, un point.
-- Juste après un déploiement, la première requête sur un actif peut renvoyer une erreur 522
-  pendant que l'edge se propage ; une seconde requête quelques secondes plus tard sert le
-  fichier normalement. Ce n'est pas un défaut de configuration.
+- **Une URL inconnue renvoie 200, pas 404** : c'est le repli qui répond, et l'application
+  affiche alors sa propre page d'erreur. Une ancienne URL peut donc sembler encore vivante
+  alors que sa route a été supprimée — comparez la réponse au `index.html` du build pour
+  trancher.
+- Juste après un déploiement, une requête peut servir la version précédente depuis le cache
+  d'edge, ou renvoyer une erreur 522 pendant que l'edge se propage. Ajouter un paramètre
+  quelconque à l'URL (`?x=1`) contourne le cache et dit ce qui est réellement déployé.
 
 ## Ce que calcule l'application
 

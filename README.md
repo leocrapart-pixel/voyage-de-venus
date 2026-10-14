@@ -128,61 +128,61 @@ Le chakra reste sur chaque porte parce que c'est lui que la figure dessine et qu
 dépouille : **le nom dit ce que la porte gouverne, le chakra dit où elle passe**. L'interface
 affiche « Portail de l'Autorité » et, en second, « Couronne · Sahasrāra ».
 
-### Sept portails, ou huit — le même nombre dans les deux moitiés
+### La forme du cycle dépend de son nombre de conjonctions
 
-Un portail n'est pas n'importe quelle conjonction Vénus-Lune. La Lune rencontre Vénus environ
-une fois par mois, soit une dizaine de fois par moitié de cycle : mais une conjonction ne
-compte comme portail que si elle est **observable**. En dessous d'une quinzaine de degrés
-d'élongation au Soleil, le couple est noyé dans le crépuscule et la rencontre a lieu hors de
-vue.
+Le cycle entier est compté, puis sa forme en découle :
 
-Ce premier critère ne suffit pas, et c'est mesurable : sur **125 cycles entre 1900 et 2100**,
-il laisse les deux moitiés en désaccord **76 % du temps** — 7-8 ou 8-7, parce que la latitude
-de la Lune et l'excentricité de Vénus ne se répètent pas d'une moitié à l'autre. Or une
-descente et son miroir ont le même nombre de portes.
-
-Le compte est donc **arbitré entre les deux moitiés, au plus petit** :
-
-| Les deux moitiés | Résultat |
-| --- | --- |
-| 8 et 8 | **8-8** |
-| 7 et 8, ou 8 et 7 | **7-7** |
-| 7 et 7 | **7-7** |
-
-Jamais 7-8. Ce que la moitié la plus riche ne peut pas placer **reste dans l'inframonde** :
-la conjonction est listée — elle a eu lieu — mais elle n'ouvre pas de porte.
-
-Dans chaque moitié, les portails retenus sont **les premiers**, à partir de la conjonction
-qui ouvre la moitié ; celui qu'on retire est le dernier. Deux raisons : la couronne doit être
-la première porte d'une moitié (tout autre critère faisait commencer l'ascension du soir au
-front, ce qui n'est pas une descente), et la dernière conjonction d'une moitié est celle dont
-la rencontre se fait déjà dans le crépuscule du passage vers l'enfers.
-
-Quand un cycle en compte huit, le huitième n'est pas un chakra de plus. C'est le
-**retour** : Inanna remonte changée, et ce qui s'ouvre n'est plus un rang mais une intention.
-
-| Seuil 8 | Ce qu'il est | Ancrage |
+| Total de conjonctions Vénus-Lune | Chakras par moitié | Seuil de vie et de mort |
 | --- | --- | --- |
-| **Mort intentionnelle** | la descente s'achève, Inanna meurt | coucher héliaque de Vénus, quelques jours avant la conjonction inférieure |
-| **Vie intentionnelle** | la sortie de l'enfer, elle remonte | lever héliaque de Vénus, quelques jours après la conjonction inférieure |
+| **17 ou moins** | 7 | **absent** — 7 + 3 + 7 |
+| **plus de 17** | 8 | **présent** — 8 + n + 8, avec n = 2 ou 3 jours d'inframonde |
 
-Un seuil n'a volontairement pas la forme d'un chakra : ni nom sanskrit, ni place sur le
-corps, ni vêtement — rien ne lui est retiré. Il est dessiné à part de la figure, en bas de
-l'axe, parce qu'il n'a pas de lieu sur le corps.
+Le seuil n'est pas une conjonction Vénus-Lune : c'est le franchissement du seuil de visibilité,
+l'instant où **Vénus seule** entre dans le Soleil ou en ressort — coucher héliaque trois jours
+avant la conjonction inférieure, lever héliaque trois jours après. Il s'ajoute donc aux
+conjonctions au lieu d'en consommer une.
 
-Sur le cycle en cours (2025-03-23 → 2026-10-24), les deux moitiés tombent d'accord sur sept :
+**Ce que la mesure donne.** Sur **124 cycles entre 1900 et 2100**, le total vaut **19** (28
+cycles) ou **20** (96 cycles) — **jamais 17 ni moins**. Le seuil est donc présent dans tous les
+cycles de la période, et chaque moitié porte huit chakras : la racine et la couronne ouvrent
+chacune deux portails, la seconde fois au huitième rang, après quoi viennent les jours puis le
+seuil.
 
-| Moitié | Portails | Détail |
+Les sept portails portent le nom de ce qu'ils gouvernent, et chacun garde son chakra :
+
+| Portail | Chakra | Sanskrit |
 | --- | --- | --- |
-| Matin — la descente | **7** | Couronne 25 avr. · Front 23 mai · Gorge 22 juin · Cœur 21 juil. · Plexus 20 août · Ventre 19 sept. · Racine 19 oct. 2025 |
-| Soir — l'ascension | **7** | Couronne 19 avr. · Front 19 mai · Gorge 17 juin · Cœur 17 juil. · Plexus 16 août · Ventre 14 sept. · Racine 12 oct. 2026 |
+| Portail de l'Autorité | Couronne | Sahasrāra |
+| Portail de la Vision | Troisième œil | Ājñā |
+| Portail de la Communication | Gorge | Viśuddha |
+| Portail de la Compassion | Cœur | Anāhata |
+| Portail du Pouvoir Personnel | Plexus solaire | Maṇipūra |
+| Portail de la Créativité | Sacré | Svādhiṣṭhāna |
+| Portail de la Manifestation | Racine | Mūlādhāra |
 
-Six conjonctions du cycle n'ouvrent aucune porte : cinq sont trop près du Soleil, et une — le
-12 octobre 2026 — est celle que la moitié du soir ne pouvait pas placer. Elle est listée,
-parce qu'elle a eu lieu, mais elle reste dans l'inframonde.
+Six de ces noms viennent du jeu de données 1952-2001, dont l'appariement portail-chakra est sans
+ambiguïté sur 34 entrées. Le jeu ne nomme pas le troisième œil : **Portail de la Vision** est le
+seul nom proposé, et l'interface le dit.
 
-Le cycle ouvert le 13 août 2023, lui, tombe sur huit dans les deux moitiés : la descente
-s'achève sur la **Mort intentionnelle** et l'ascension sur la **Vie intentionnelle**.
+Les **jours de l'inframonde** sont les conjonctions qui restent après les chakras. Ils sont
+**gris** et sans chakra : ils ne passent par aucun centre du corps. Comme ils n'ont pas de place
+anatomique, ils sont dessinés sous la figure et non sur elle.
+
+L'ordre de lecture suit le mythe et non le calendrier : la descente descend — chakras, jours,
+mort —, l'ascension remonte — vie, jours, chakras. C'est pourquoi l'ascension se lit
+**Manifestation → Créativité → Pouvoir Personnel → Compassion → Communication → Vision →
+Autorité** : la même échelle, parcourue à l'envers.
+
+### Le rang est un ordre de lecture, pas une date
+
+Les dates d'une moitié ne suivent pas son récit : les jours de l'inframonde qui **terminent** la
+descente tombent après la conjonction inférieure, donc du côté de l'étoile du soir. Deux champs
+distincts le disent, et il ne faut pas les confondre :
+
+- `star` — le signe de l'élongation, une **mesure** : matin à l'ouest du Soleil, soir à l'est ;
+- `half` — la moitié du cycle, un **regroupement** : la descente avant la conjonction supérieure,
+  l'ascension après ;
+- `index` — le **rang dans la lecture** du mythe, qui est aussi l'ordre d'affichage.
 
 ### Un portail est un instant exact
 

@@ -5,7 +5,7 @@
 	import CycleTimeline from '#lib/components/CycleTimeline.svelte';
 	import JourneyReadings from '#lib/components/JourneyReadings.svelte';
 	import TimeControls from '#lib/components/TimeControls.svelte';
-	import { formatDayAndTime, formatDays, formatMoment, formatZodiac } from '#lib/format';
+	import { formatDate, formatDays, formatMoment, formatZodiac } from '#lib/format';
 
 	/**
 	 * The Voyage de Vénus.
@@ -68,7 +68,7 @@
 			? {
 					title: `Portail ouvert · ${journey.activePassage.gate.name}`,
 					line:
-						`Conjonction exacte le ${formatDayAndTime(journey.activePassage.at)}, à ${formatZodiac(journey.activePassage.longitude)}. ` +
+						`Conjonction du ${formatDate(journey.activePassage.at)}, à ${formatZodiac(journey.activePassage.longitude)}. ` +
 						('garment' in journey.activePassage.gate
 							? `Le portail ${journey.activePassage.index} est ouvert, Vénus abandonne ${journey.activePassage.gate.garment}.`
 							: `Seuil ${journey.activePassage.index} franchi, ${journey.activePassage.gate.name.toLowerCase()} : ${journey.activePassage.gate.meaning}`),
@@ -83,7 +83,7 @@
 				: journey.nextPassage
 					? {
 							title: `Prochain portail · ${journey.nextPassage.gate.name}`,
-							line: `Conjonction exacte le ${formatDayAndTime(journey.nextPassage.at)}, à ${formatZodiac(journey.nextPassage.longitude)} — porte ${journey.nextPassage.index}.`,
+							line: `Conjonction du ${formatDate(journey.nextPassage.at)}, à ${formatZodiac(journey.nextPassage.longitude)} — portail ${journey.nextPassage.index}.`,
 							tone: 'next'
 						}
 					: { title: 'Cycle en cours', line: 'Aucun portail à venir.', tone: 'plain' }

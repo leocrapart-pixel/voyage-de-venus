@@ -34,11 +34,14 @@
 
 export type GateKey = 'crown' | 'brow' | 'throat' | 'heart' | 'solar' | 'sacral' | 'root';
 
-/** The two thresholds that close a half: the death going down, the life coming up. */
+/** Les trois jours que Vénus passe sous le Soleil, après la racine. */
+export type UnderworldKey = 'inframonde-jour-1' | 'inframonde-jour-2' | 'inframonde-jour-3';
+
+/** Les deux seuils qui encadrent la traversée. */
 export type ThresholdKey = 'mort-intentionnelle' | 'vie-intentionnelle';
 
-/** Anything a portal can open. */
-export type PortalKey = GateKey | ThresholdKey;
+/** Tout ce qu'un portail peut ouvrir. */
+export type PortalKey = GateKey | ThresholdKey | UnderworldKey;
 
 /**
  * A gate is named after what it governs, not after the centre of the body it passes
@@ -180,20 +183,82 @@ export const GATES: readonly Gate[] = [
 export const GATE_COUNT = GATES.length;
 
 /**
- * A threshold is deliberately not shaped like a chakra: no Sanskrit name, no place on the
- * body, no garment. What happens there is that she dies and is given back.
+ * Les trois jours de l'inframonde.
+ *
+ * Après la racine, Vénus est au plus près du Soleil : c'est la traversée. Trois conjonctions
+ * Vénus-Lune s'y succèdent, une par lunaison, et rien ne les distingue l'une de l'autre —
+ * d'où un seul nom pour les trois et une seule couleur, grise : celle d'un temps où Vénus
+ * n'est plus visible.
+ *
+ * Un jour de l'inframonde n'a pas la forme d'un chakra : ni nom sanskrit, ni place sur le
+ * corps, ni vêtement — rien ne lui est retiré.
+ */
+export interface UnderworldDay {
+	/** 8, 9 puis 10 — les trois rangs qui suivent les sept chakras. */
+	index: number;
+	key: UnderworldKey;
+	/** « Inframonde jour 1 », « jour 2 », « jour 3 ». */
+	name: string;
+	/** Ce qui se passe pendant cette lunaison. */
+	meaning: string;
+	/** Gris : le temps de l'invisible. */
+	color: string;
+	deep: string;
+}
+
+export const UNDERWORLD: Readonly<Record<UnderworldKey, UnderworldDay>> = {
+	'inframonde-jour-1': {
+		index: 8,
+		key: 'inframonde-jour-1',
+		name: 'Inframonde jour 1',
+		meaning:
+			'La racine franchie, Vénus entre dans le Soleil. Inanna meurt : ce qu’elle a lâché aux sept portes la précède dans le Grand En-Bas.',
+		color: '#6f7480',
+		deep: '#2b2f38'
+	},
+	'inframonde-jour-2': {
+		index: 9,
+		key: 'inframonde-jour-2',
+		name: 'Inframonde jour 2',
+		meaning:
+			'La traversée continue sans lumière. Inanna est jugée, mise à mort et suspendue : rien n’en paraît au-dehors.',
+		color: '#7b808c',
+		deep: '#31353f'
+	},
+	'inframonde-jour-3': {
+		index: 10,
+		key: 'inframonde-jour-3',
+		name: 'Inframonde jour 3',
+		meaning:
+			'La dernière lunaison de l’invisible. Vénus est au plus près du Soleil avant de reparaître : Inanna remonte, dépouillée.',
+		color: '#878c99',
+		deep: '#373b46'
+	}
+} as const;
+
+/** Les trois jours, dans l'ordre. */
+export const UNDERWORLD_DAYS: readonly UnderworldDay[] = [
+	UNDERWORLD['inframonde-jour-1'],
+	UNDERWORLD['inframonde-jour-2'],
+	UNDERWORLD['inframonde-jour-3']
+];
+
+/**
+ * Un seuil : la mort en entrant dans l'inframonde, la vie en en sortant.
+ *
+ * Il est gardé tel quel, et il n'est pas un quatrième jour : c'est le franchissement lui-même,
+ * à l'instant où Vénus disparaît dans le Soleil ou en reparaît. Il n'a donc ni chakra ni
+ * couleur de chakra.
  */
 export interface Threshold {
-	/** 8 — it always follows the seven chakras. */
-	index: 8;
+	/** 11 — après les sept chakras et les trois jours. */
+	index: number;
 	key: ThresholdKey;
-	/** The threshold's name. Unlike the seven, these two carry no chakra at all. */
 	name: string;
-	/** What the threshold is, and what it is anchored to. */
 	meaning: string;
-	/** Which half of the cycle it closes. */
+	/** Lequel des deux seuils. */
 	star: 'morning' | 'evening';
-	/** The astronomical event it marks. */
+	/** L'événement du ciel auquel il s'ancre. */
 	anchor: string;
 	color: string;
 	deep: string;
@@ -201,28 +266,100 @@ export interface Threshold {
 
 export const THRESHOLDS: Readonly<Record<ThresholdKey, Threshold>> = {
 	'mort-intentionnelle': {
-		index: 8,
+		index: 11,
 		key: 'mort-intentionnelle',
 		name: 'Mort intentionnelle',
 		meaning:
 			'La descente s’achève : Vénus disparaît dans le Soleil. Inanna meurt, et ce qu’elle a lâché aux sept portes la précède.',
 		star: 'morning',
 		anchor: 'coucher héliaque de Vénus, quelques jours avant la conjonction inférieure',
-		color: '#7c8494',
-		deep: '#2b2f3a'
+		color: '#5b6270',
+		deep: '#252932'
 	},
 	'vie-intentionnelle': {
-		index: 8,
+		index: 11,
 		key: 'vie-intentionnelle',
 		name: 'Vie intentionnelle',
 		meaning:
 			'La sortie de l’enfer : Vénus reparaît en étoile du soir. Inanna remonte, non plus couronnée mais intentionnelle.',
 		star: 'evening',
 		anchor: 'lever héliaque de Vénus, quelques jours après la conjonction inférieure',
-		color: '#f2e7c9',
-		deep: '#4a4433'
+		color: '#aab0bd',
+		deep: '#3a3f4a'
 	}
 } as const;
+
+/**
+ * Le sommet d'une moitié : sept chakras, trois jours d'inframonde, un seuil.
+ *
+ * Onze portails, dans cet ordre à la descente. À l'ascension les sept chakras se lisent à
+ * l'envers — de la racine vers la couronne — et la traversée ouvre la moitié plutôt que de
+ * la fermer, puisque c'est par elle que Vénus reparaît.
+ */
+export const PORTALS_PER_HALF = GATE_COUNT + UNDERWORLD_DAYS.length + 1;
+
+/**
+ * Le seuil de vie et de mort n'existe que dans les cycles assez fournis.
+ *
+ * Le cycle entier compte ses conjonctions Vénus-Lune, et ce total décide de la forme :
+ *
+ * - **17 conjonctions ou moins** : sept chakras par moitié, trois jours d'inframonde, et *pas*
+ *   de portail de vie ni de mort — 7 + 3 + 7 ;
+ * - **plus de 17** (le cas le plus fréquent) : huit chakras par moitié, puis les jours qui
+ *   restent, et le seuil s'ajoute — 8 + 2 + 8 avec la mort et la vie.
+ *
+ * Le seuil n'est pas une conjonction Vénus-Lune : Vénus seule entre dans le Soleil ou en
+ * ressort, au coucher puis au lever héliaques. Il s'ajoute donc aux conjonctions au lieu d'en
+ * consommer une, et c'est ce qui fait tomber le compte.
+ */
+export const CYCLE_TOTAL_THRESHOLD = 17;
+
+export interface CycleShape {
+	/** Le total de conjonctions Vénus-Lune du cycle, tel que mesuré. */
+	total: number;
+	/** Nombre de chakras par moitié : sept, ou huit. */
+	chakrasParMoitie: number;
+	/** Le cycle porte-t-il le portail de vie et de mort ? */
+	avecSeuil: boolean;
+}
+
+export function cycleShape(total: number): CycleShape {
+	const avecSeuil = total > CYCLE_TOTAL_THRESHOLD;
+	return {
+		total,
+		chakrasParMoitie: avecSeuil ? GATE_COUNT + 1 : GATE_COUNT,
+		avecSeuil
+	};
+}
+
+/** Le rang du seuil : le onzième, après les sept chakras et les trois jours. */
+export const THRESHOLD_RANK = PORTALS_PER_HALF;
+
+/**
+ * La descente va du sommet vers la racine, l'ascension suit le chemin inverse.
+ *
+ * C'est la même échelle parcourue dans les deux sens : Inanna se dépouille en descendant
+ * (couronne d'abord, racine ensuite) et remonte en reprenant les mêmes centres, de la racine
+ * vers la couronne. La seconde moitié du cycle — l'étoile du soir — se lit donc dans l'ordre
+ * croissant des chakras.
+ */
+export const GATES_DESCENDING: readonly Gate[] = GATES;
+export const GATES_ASCENDING: readonly Gate[] = [...GATES].reverse();
+
+/**
+ * L'ordre des chakras pour une moitié du cycle, sur `count` portails.
+ *
+ * Sept dans un cycle court : la descente va de la couronne à la racine, l'ascension de la racine
+ * à la couronne. Huit dans un cycle fourni : le huitième reprend le premier centre du parcours —
+ * la couronne à la descente, la racine à l'ascension —, parce que le cycle repasse par son point
+ * de départ avant la traversée.
+ */
+export function chakraSequence(star: 'morning' | 'evening', count: number): readonly Gate[] {
+	const base = star === 'morning' ? GATES_DESCENDING : GATES_ASCENDING;
+	const out: Gate[] = [];
+	for (let i = 0; i < count; i++) out.push(base[i % base.length]);
+	return out;
+}
 
 /** The gate for a 1-based rank of the descent, 1 to 7. */
 export function gateForIndex(index: number): Gate {
@@ -230,26 +367,14 @@ export function gateForIndex(index: number): Gate {
 	return GATES[i];
 }
 
-/**
- * What a rank opens in a given half of the cycle.
- *
- * Ranks 1 to 7 are the chakras, in the order of the descent. Rank 8 exists only in a half
- * that holds eight observable conjunctions, and it is the threshold: the death on the way
- * down, the life on the way back up.
- */
-export function portalForRank(rank: number, star: 'morning' | 'evening'): Gate | Threshold {
-	if (rank >= 8) return star === 'morning' ? THRESHOLDS['mort-intentionnelle'] : THRESHOLDS['vie-intentionnelle'];
-	return gateForIndex(rank);
+/** Ce portail est-il un jour de l'inframonde ? */
+export function isUnderworldKey(key: string): key is UnderworldKey {
+	return key.startsWith('inframonde-jour-');
 }
 
-export function gateByKey(key: GateKey): Gate {
-	const found = GATES.find((g) => g.key === key);
-	if (!found) throw new Error(`Unknown gate: ${key}`);
-	return found;
-}
-
-export function isThresholdKey(key: string): key is ThresholdKey {
-	return key === 'mort-intentionnelle' || key === 'vie-intentionnelle';
+/** Le jour de l'inframonde pour un rang, ou `undefined` au-delà des trois jours. */
+export function underworldDayForIndex(index: number): UnderworldDay | undefined {
+	return UNDERWORLD_DAYS[index - 1];
 }
 
 /**

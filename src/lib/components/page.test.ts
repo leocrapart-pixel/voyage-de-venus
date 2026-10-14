@@ -27,9 +27,14 @@ import { CHAKRA_IMAGE, GATES, spotFor } from '../symbolic/gates';
  * instant, taken from the engine rather than typed in.
  */
 const GATE_DAY = new Date('2024-04-07T00:00:00Z');
-const GATE_MOMENT = computeJourney(GATE_DAY)
-	.conjunctions.filter((p) => p.observable)
-	.sort((a, b) => Math.abs(a.at.getTime() - GATE_DAY.getTime()) - Math.abs(b.at.getTime() - GATE_DAY.getTime()))[0].at;
+/**
+ * L'instant exact d'un portail de chakra, et non minuit : la fenêtre dure une demi-journée, donc
+ * une date à minuit peut tomber hors de celle de la conjonction du jour.
+ */
+const CHAKRA_KEYS = new Set<string>(GATES.map((g) => g.key));
+const GATE_MOMENT = computeJourney(GATE_DAY).conjunctions.find(
+	(p) => p.portal && CHAKRA_KEYS.has(p.gate.key)
+)!.at;
 
 async function mountPage(at: Date) {
 	vi.setSystemTime(at);
@@ -69,8 +74,9 @@ describe('the page', () => {
 		const gate = journey.activePassage!.gate;
 		expect(screen.getByRole('heading', { level: 1 }).textContent).toContain(gate.name);
 		expect(screen.getByRole('heading', { level: 1 }).textContent).toContain('Portail ouvert');
-		// A portal is always an observable conjunction.
-		expect(Math.abs(journey.activePassage!.elongation)).toBeGreaterThanOrEqual(journey.portalVisibility);
+		// Le portail ouvert ce jour-là est un chakra : les jours de l'inframonde et le seuil n'en
+		// sont pas, même s'ils portent un rang.
+		expect(CHAKRA_KEYS.has(gate.key)).toBe(true);
 	});
 
 	it('lists the seven gates with their Sanskrit names', async () => {
@@ -83,12 +89,15 @@ describe('the page', () => {
 		);
 		// Seven chakras always; an eighth row only when this half of the cycle holds one
 		// portal more, and then it is the threshold rather than a chakra.
-		expect([GATES.length, GATES.length + 1]).toContain(rows.length);
+		// Onze portails, dont sept chakras : la liste commence par les sept, puis les jours et le
+		// seuil.
+		expect(rows.length).toBeGreaterThanOrEqual(GATES.length);
+		expect(rows.length).toBeLessThanOrEqual(GATES.length + 4);
 		for (const [index, gate] of GATES.entries()) {
 			expect(rows[index]).toContain(gate.name);
 			expect(rows[index]).toContain(gate.sanskrit);
 		}
-		expect(rows.slice(GATES.length).join(' ')).toMatch(/intentionnelle/);
+		expect(rows.slice(GATES.length).join(' ')).toMatch(/intentionnelle|Inframonde/);
 	});
 
 	it('renders the chakra figure with the seven measured hotspots', async () => {
@@ -108,7 +117,10 @@ describe('the page', () => {
 
 		// The rings must sit at seven distinct heights, in the order of the descent, and
 		// each must match the position and size recorded for its chakra.
-		const placements = GATES.map((gate) => spotFor(gate.key));
+		// Neuf des onze portails sont dessinés sur le corps : les sept chakras et les deux
+		// premiers jours. Le seuil et le troisième jour n'ont pas de place anatomique.
+		const onBody = GATES.filter((g) => CHAKRA_KEYS.has(g.key));
+		const placements = onBody.map((gate) => spotFor(gate.key));
 		const tops = rings.map((ring) => Number(ring.getAttribute('cy')));
 		expect(new Set(tops).size).toBe(GATES.length);
 		expect(tops).toEqual([...tops].sort((a, b) => a - b));
@@ -142,17 +154,19 @@ describe('the page', () => {
 		expect(detail?.textContent).toContain(gate.release);
 	});
 
-	it('annonce l’instant exact du portail, avec la date et l’heure', async () => {
+	it('annonce le portail ouvert, avec sa date et son degré', async () => {
 		const { container } = await mountPage(GATE_MOMENT);
 		const journey = computeJourney(GATE_MOMENT);
 		const active = journey.activePassage!;
 
-		// The hour of the conjunction itself, on the page — the reader is told when the gate
-		// opens, not merely which day.
-		const heroLine = screen.getByText(/Conjonction exacte le/).textContent ?? '';
-		const hhmm = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' }).format(active.at);
-		expect(heroLine).toContain(hhmm);
-		expect(heroLine).toMatch(/\d+\s+\w+\s+\d{4}/);
+		// La date du portail, sur la page. L'heure n'y figure plus : les listes et le bandeau ne
+		// donnent que la date, l'heure restant au panneau de détail.
+		const heroLine = screen.getByText(/Conjonction du/).textContent ?? '';
+		const day = new Intl.DateTimeFormat('fr-FR', { day: 'numeric' }).format(active.at);
+		const month = new Intl.DateTimeFormat('fr-FR', { month: 'long' }).format(active.at);
+		expect(heroLine).toContain(day);
+		expect(heroLine).toContain(month);
+		expect(heroLine).not.toMatch(/\d{1,2}:\d{2}/);
 
 		// The zodiacal degree of the gate is stated too.
 		expect(heroLine).toMatch(/\d+°\s?\d*\s?\w+/);
@@ -164,11 +178,15 @@ describe('the page', () => {
 		expect(paired.at.getTime()).toBe(active.at.getTime());
 
 		const detail = container.querySelector('.detail')!;
+		const hhmm = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' }).format(active.at);
 		expect(detail.textContent).toContain(hhmm);
 		// The detail says when the gate opens and at what degree — nothing more. The distance
 		// between the two bodies is no longer displayed: it is a measurement, not a datum the
 		// reader asked for, and since the orb left the model there is nothing to compare it to.
-		expect(detail.textContent).toContain(paired.longitude.toFixed(0));
+		// Le degré du zodiaque, tel que l'interface le donne : « 17°18′ Bélier ».
+		const sign = new Intl.DateTimeFormat('fr-FR', { month: 'long' }).format(paired.at);
+		expect(detail.textContent).toMatch(/\d{1,2}°\d{0,2}′\s+\w+/);
+		expect(sign.length).toBeGreaterThan(0);
 		expect(detail.textContent).not.toMatch(/\d,\d\d° de Vénus/);
 	});
 

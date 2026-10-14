@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { GatePassage, VenusJourney } from '../astro/cycle';
-	import { formatShortDate, formatTime, formatZodiac } from '../format';
+	import { formatShortDate } from '../format';
 
 	/**
 	 * The cycle as a dial: one turn of the wheel is one synodic cycle, from the inferior
@@ -217,9 +217,6 @@
 					>
 						<span class="passage-gate">{passage.index} · {passage.gate.name}</span>
 						<span class="passage-when num">{formatShortDate(passage.at)}</span>
-						<span class="passage-sep num" title={formatZodiac(passage.longitude)}
-							>{formatTime(passage.at)}</span
-						>
 					</button>
 				</li>
 			{/each}
@@ -285,7 +282,7 @@
 		width: 100%;
 		display: grid;
 		grid-template-columns: 1fr auto;
-		grid-template-areas: 'gate sep' 'when sep';
+		grid-template-areas: 'gate when';
 		gap: 0 0.6rem;
 		padding: 0.4rem 0.6rem;
 		text-align: left;
@@ -313,15 +310,9 @@
 
 	.passage-when {
 		grid-area: when;
+		text-align: right;
 		font-size: 0.7rem;
 		color: var(--ink-faint);
 	}
 
-	.passage-sep {
-		grid-area: sep;
-		align-self: center;
-		font-size: 0.8rem;
-		color: var(--gate);
-		font-weight: 600;
-	}
 </style>

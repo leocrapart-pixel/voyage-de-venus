@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { GatePassage, VenusJourney } from '../astro/cycle';
-	import { formatDate, formatDayAndTime, formatShortDate, formatZodiac } from '../format';
+	import { formatDate, formatShortDate, formatZodiac } from '../format';
 
 	/**
 	 * The whole cycle on one line of time.
@@ -73,8 +73,8 @@
 				class:open={passage.open}
 				class:selected={selected?.at.getTime() === passage.at.getTime()}
 				style="left:{pct(passage.at)}%;--gate:{passage.gate.color}"
-				title="{passage.index} · {passage.gate.name} — {formatDayAndTime(passage.at)}, à {formatZodiac(passage.longitude)}"
-				aria-label="{passage.index}, {passage.gate.name}, conjonction exacte le {formatDayAndTime(passage.at)}, à {formatZodiac(passage.longitude)}"
+				title="{passage.index} · {passage.gate.name} — {formatShortDate(passage.at)}, à {formatZodiac(passage.longitude)}"
+				aria-label="{passage.index}, {passage.gate.name}, {formatShortDate(passage.at)}, à {formatZodiac(passage.longitude)}"
 				onclick={(event) => {
 					event.stopPropagation();
 					onselect?.(passage);

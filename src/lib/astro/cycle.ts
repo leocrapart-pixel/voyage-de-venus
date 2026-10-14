@@ -38,22 +38,22 @@ import { GATES, gateForIndex, type Gate } from '../symbolic/gates';
  *   elongation at which the planet becomes visible again. That threshold is an
  *   observational parameter, not a constant of nature, so it is configurable and its
  *   default is stated rather than smuggled in.
- * - **portail** — a Moon-Venus conjunction. At each one Venus hands over one of the
- *   seven chakras, following the order of Inanna's descent.
+ * - **portail** — a Moon-Venus conjunction: an *instant*, the moment the Moon and Venus
+ *   share an ecliptic longitude. It is never approximate, so it is never qualified as
+ *   close or missed — a conjunction is exact or it is not a conjunction. Two figures
+ *   describe it and they are not the same thing:
+ *
+ *   - the **instant** itself, to the minute — that is the gate;
+ *   - the **closest approach**, the minimum great-circle separation over the hours around
+ *     it, which is what the eye would see. It differs from the instant's separation by a
+ *     few hundredths of a degree, since the Moon's ecliptic latitude is what separates the
+ *     two bodies, and that latitude barely moves in an hour. Measured over a full cycle
+ *     the peak of the closest approach lands within 1.1 h of the conjunction, so the app
+ *     reports both times whenever they differ by more than half an hour.
  */
 
 export type ConjunctionKind = 'inferior' | 'superior';
 export type Star = 'morning' | 'evening';
-export type GateQuality = 'tight' | 'close' | 'wide';
-
-export interface MoonVenusOrbConfig {
-	/** Orb at or below which a passage is a full gate. Default 1°. */
-	tightOrb: number;
-	/** Orb at or below which a gate is open at all. Default 3°. */
-	openOrb: number;
-}
-
-export const DEFAULT_ORB: MoonVenusOrbConfig = { tightOrb: 1, openOrb: 3 };
 
 /**
  * Minimum solar elongation at which Venus is taken to be visible.
@@ -65,6 +65,31 @@ export const DEFAULT_ORB: MoonVenusOrbConfig = { tightOrb: 1, openOrb: 3 };
  * the resulting length of the inframonde.
  */
 export const DEFAULT_ARCUS_VISIONIS = 5;
+
+/**
+ * Half-width, in hours, of the window around an exact conjunction during which the
+ * interface calls that gate "in progress".
+ *
+ * The gate itself is an instant and is always reported to the minute; this window decides
+ * nothing about when the conjunction happens, only how long it stays on screen as the
+ * current one. Half a day either side: wider than the hours the Moon spends near Venus,
+ * far narrower than the 29.5-day lunation, so a gate is never announced on a day that is
+ * not its own.
+ */
+export const GATE_WINDOW_HOURS = 12;
+
+/**
+ * Whether a gate counts as in progress at a given moment.
+ *
+ * The comparison needs a tolerance, and it is not cosmetic: conjunctions are located by
+ * bisection with a half-second stopping rule, so the same conjunction found from two
+ * slightly different search grids can land up to half a second apart. Without the slack, a
+ * gate would flicker shut for a reader who reloads a page on its exact instant.
+ */
+export function isGateOpen(passageAt: Date, moment: Date, windowHours = GATE_WINDOW_HOURS): boolean {
+	const toleranceHours = 1 / 3600;
+	return Math.abs(daysBetween(passageAt, moment)) <= windowHours / 24 + toleranceHours;
+}
 
 export interface Conjunction {
 	kind: ConjunctionKind;
@@ -101,16 +126,39 @@ export interface InvisibilityWindow {
 	conjunction: Conjunction;
 }
 
+/**
+ * One passage: the exact instant the Moon and Venus share an ecliptic longitude.
+ *
+ * There is no quality field, because there is nothing to qualify. A conjunction is the
+ * instant two bodies hold the same zodiacal degree — it happens or it does not, and its
+ * time is fixed to the second. What varies from month to month is only how far apart the
+ * two bodies are *in the sky* at that instant, which is a measurement to report rather
+ * than a verdict to pass: the Moon can meet Venus at the same degree while passing 5°
+ * above or below it, and that distance is the Moon's own ecliptic latitude showing.
+ */
 export interface MoonVenusConjunction {
+	/** The instant of the conjunction, in ecliptic longitude. This is the gate. */
 	at: Date;
-	/** True angular separation, degrees — the orb. */
-	orb: number;
-	quality: GateQuality;
-	/** Moon's ecliptic latitude: how far it passes above or below Venus. */
+	/** The longitude both bodies hold at that instant — the gate's degree. */
+	longitude: number;
+	/** Venus's longitude, identical to `longitude` by construction. */
+	venusLongitude: number;
+	/**
+	 * The Moon's own longitude. Equal to `longitude` only up to the tolerance of the
+	 * bisection (half a second of time, so under 0.002° of the Moon's motion), which is
+	 * why it is measured rather than assumed.
+	 */
+	moonLongitude: number;
+	/** True angular separation at the instant of conjunction, degrees. */
+	separation: number;
+	/** Smallest separation over the hours either side, degrees. */
+	closestSeparation: number;
+	/** When that closest approach occurs. Usually within an hour of `at`. */
+	closestAt: Date;
+	/** Moon's ecliptic latitude at the conjunction, degrees — what the separation is made of. */
 	moonLatitude: number;
 	/** Venus's ecliptic latitude at the same instant. */
 	venusLatitude: number;
-	venusLongitude: number;
 	/** Elongation from the Sun at the conjunction. */
 	elongation: number;
 	star: Star;
@@ -125,7 +173,7 @@ export interface MoonVenusConjunction {
 }
 
 export interface GatePassage extends MoonVenusConjunction {
-	/** True when the Moon is currently inside the open orb of Venus. */
+	/** True within half a day of the exact instant — see `GATE_WINDOW_HOURS`. */
 	open: boolean;
 }
 
@@ -147,7 +195,8 @@ export interface GreatestElongation {
 export interface VenusJourney {
 	date: Date;
 	arcusVisionis: number;
-	orb: MoonVenusOrbConfig;
+	/** Half-width, in hours, of the window during which a gate counts as in progress. */
+	gateWindowHours: number;
 	/** Inferior conjunction that opened the cycle containing `date`. */
 	start: Conjunction;
 	/** Inferior conjunction that closes it. */
@@ -178,7 +227,7 @@ export interface VenusJourney {
 	evening: Phase;
 	/** Every Moon-Venus conjunction of this cycle, chronological. */
 	conjunctions: GatePassage[];
-	/** The passage whose gate is open right now, if the Moon is inside the orb. */
+	/** The passage whose exact instant is closest to the reader's moment, if one is open. */
 	activePassage: GatePassage | null;
 	/** The next passage to come, whether or not its gate has opened. */
 	nextPassage: GatePassage | null;
@@ -214,8 +263,10 @@ export function passageForGate(journey: VenusJourney, key: Gate['key']): GatePas
 }
 
 export interface JourneyOptions {
+	/** Minimum solar elongation, in degrees, at which Venus counts as visible. */
 	arcusVisionis?: number;
-	orb?: MoonVenusOrbConfig;
+	/** Half-width, in hours, of the window around an exact conjunction. */
+	gateWindowHours?: number;
 }
 
 function starOf(elongation: number): Star {
@@ -227,10 +278,38 @@ export function venusElongation(date: Date): number {
 	return signedDelta(position(Body.Venus, date).longitude, position(Body.Sun, date).longitude);
 }
 
-export function gateQuality(orb: number, orbConfig: MoonVenusOrbConfig = DEFAULT_ORB): GateQuality {
-	if (orb <= orbConfig.tightOrb) return 'tight';
-	if (orb <= orbConfig.openOrb) return 'close';
-	return 'wide';
+/**
+ * The closest approach of the Moon and Venus around a conjunction.
+ *
+ * The conjunction is exact in longitude; the separation in the sky reaches its minimum
+ * somewhere in the hours around it, because the Moon's ecliptic latitude is not zero and
+ * Venus's is not either. Sampling the separation coarsely and then trisecting the bracket
+ * finds that minimum to well under a minute.
+ */
+function closestApproach(around: Date, hours = 20): { at: Date; separation: number } {
+	const separationAt = (t: number) =>
+		angularSeparation(position(Body.Moon, new Date(t)), position(Body.Venus, new Date(t)));
+	const half = hours * 3_600_000;
+	const step = 20 * 60_000;
+	let best = around.getTime() - half;
+	let bestValue = separationAt(best);
+	for (let t = best; t <= around.getTime() + half; t += step) {
+		const value = separationAt(t);
+		if (value < bestValue) {
+			bestValue = value;
+			best = t;
+		}
+	}
+	let lo = best - step;
+	let hi = best + step;
+	for (let i = 0; i < 60 && hi - lo > 1000; i++) {
+		const a = lo + (hi - lo) / 3;
+		const b = hi - (hi - lo) / 3;
+		if (separationAt(a) < separationAt(b)) hi = b;
+		else lo = a;
+	}
+	const at = new Date((lo + hi) / 2);
+	return { at, separation: separationAt(at.getTime()) };
 }
 
 /** Sample a scalar function of time on a fixed grid. */
@@ -411,14 +490,17 @@ export function findInvisibilityWindow(
 }
 
 /**
- * Every Moon-Venus conjunction in a window, with the true angular separation.
+ * Every Moon-Venus conjunction in a window: the exact instants, and how far apart the two
+ * bodies stand at them.
  *
- * The conjunction itself is a zodiacal one — Moon and Venus at the same ecliptic
- * longitude — found by bisecting the unwrapped longitude difference. The *orb* beside
- * it is the great-circle separation, which grows with the Moon's ecliptic latitude (up
- * to 5.3°): that is why a month whose zodiacal conjunction is exact can still leave
- * the Moon several degrees from Venus in the sky. Over 242 conjunctions from 2018 to
- * 2038 the median separation is 3.4°, and only 42 % come within a 3° orb.
+ * The conjunction is a zodiacal one — Moon and Venus holding the same ecliptic longitude —
+ * found by bisecting the longitude difference. That instant is exact and is the gate. The
+ * separation recorded beside it is a different quantity: the great-circle distance between
+ * the two, which is dominated by the Moon's ecliptic latitude (up to 5.3°) because at a
+ * conjunction the longitude term is zero. So a month can put the Moon exactly on Venus's
+ * degree and still leave it degrees away in the sky — an observation to report, never a
+ * reason to call the gate missed. Over 242 conjunctions from 2018 to 2038 the median
+ * separation is 3.4°, and the smallest of a cycle can be as tight as 0.27°.
  */
 export function findMoonVenusConjunctions(from: Date, to: Date): MoonVenusConjunction[] {
 	const stepDays = 0.25;
@@ -429,15 +511,18 @@ export function findMoonVenusConjunctions(from: Date, to: Date): MoonVenusConjun
 	return roots.map((at) => {
 		const moon = position(Body.Moon, at);
 		const venus = position(Body.Venus, at);
-		const orb = angularSeparation(moon, venus);
 		const elongation = venusElongation(at);
+		const closest = closestApproach(at);
 		return {
 			at,
-			orb,
-			quality: gateQuality(orb),
+			longitude: venus.longitude,
+			venusLongitude: venus.longitude,
+			moonLongitude: moon.longitude,
+			separation: angularSeparation(moon, venus),
+			closestSeparation: closest.separation,
+			closestAt: closest.at,
 			moonLatitude: moon.latitude,
 			venusLatitude: venus.latitude,
-			venusLongitude: venus.longitude,
 			elongation,
 			star: starOf(elongation),
 			waxing: elongation > 0,
@@ -461,7 +546,8 @@ function organise(
 	start: Conjunction,
 	mid: Conjunction,
 	end: Conjunction,
-	orbConfig: MoonVenusOrbConfig
+	now: Date,
+	windowHours: number
 ): GatePassage[] {
 	const inCycle = raw
 		.filter((c) => c.at.getTime() >= start.at.getTime() && c.at.getTime() <= end.at.getTime())
@@ -480,8 +566,10 @@ function organise(
 			index: rank,
 			gate: gateForIndex(rank),
 			dayOfPhase: Math.abs(daysBetween(c.star === 'morning' ? start.at : mid.at, c.at)),
-			quality: gateQuality(c.orb, orbConfig),
-			open: c.orb <= orbConfig.openOrb
+			// A gate stands open for half a day either side of its exact instant. The instant
+			// itself is always reported to the minute; this window only decides which gate the
+			// interface calls "in progress" right now.
+			open: isGateOpen(c.at, now, windowHours)
 		};
 	});
 }
@@ -492,7 +580,7 @@ function organise(
  */
 export function computeJourney(date: Date, options: JourneyOptions = {}): VenusJourney {
 	const arcusVisionis = options.arcusVisionis ?? DEFAULT_ARCUS_VISIONIS;
-	const orbConfig = options.orb ?? DEFAULT_ORB;
+	const gateWindowHours = options.gateWindowHours ?? GATE_WINDOW_HOURS;
 
 	const { start, mid, end } = findEnclosingCycle(date);
 	const synodicDays = daysBetween(start.at, end.at);
@@ -507,7 +595,8 @@ export function computeJourney(date: Date, options: JourneyOptions = {}): VenusJ
 		start,
 		mid,
 		end,
-		orbConfig
+		date,
+		gateWindowHours
 	);
 
 	const phaseOf = (star: Star): Phase => {
@@ -518,14 +607,14 @@ export function computeJourney(date: Date, options: JourneyOptions = {}): VenusJ
 	};
 
 	const moonSeparation = angularSeparation(moon, venus);
-	// A gate stands open while the Moon is inside the orb, and the Moon takes a few days
-	// to cross a 3° orb, so freshness is a window rather than an instant. Bounding it
-	// matters: without the time test, a conjunction three months away that happens to be
-	// tight would be reported as the gate open tonight.
+	// The gate is the instant; this is only which one the interface calls "in progress".
+	// Half a day either side, so a gate is never announced on a day that is not its own.
+	// Uses each passage's own `open` flag rather than re-testing the window here: two places
+	// computing the same window is how a passage ends up open in one view and shut in another.
 	const activePassage =
 		passages
-			.filter((p) => p.open && Math.abs(daysBetween(date, p.at)) <= 2)
-			.sort((a, b) => a.orb - b.orb)[0] ?? null;
+			.filter((p) => p.open)
+			.sort((a, b) => Math.abs(daysBetween(date, a.at)) - Math.abs(daysBetween(date, b.at)))[0] ?? null;
 	// The gate that is next, counting the one standing open right now as still ahead of
 	// the reader until it closes.
 	const nextPassage =
@@ -549,7 +638,7 @@ export function computeJourney(date: Date, options: JourneyOptions = {}): VenusJ
 	return {
 		date,
 		arcusVisionis,
-		orb: orbConfig,
+		gateWindowHours,
 		start,
 		mid,
 		end,

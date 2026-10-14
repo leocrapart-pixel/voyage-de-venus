@@ -4,13 +4,17 @@
 	 *
 	 * The heavy part of the app is a search through the ephemeris, so the controls do not
 	 * recast on every keystroke: the route debounces the chosen moment (see
-	 * `src/routes/+page.svelte`). Two settings change what the cycle means rather than
-	 * when it is read, so they are here beside the clock:
+	 * `src/routes/+page.svelte`).
 	 *
-	 * - the **orbe** decides when a Moon-Venus conjunction counts as an open gate;
-	 * - the **arcus visionis** decides how close to the Sun Venus may be and still be
-	 *   visible, which is what fixes the length of the inframonde. It is an observational
-	 *   parameter, not a constant, so it is exposed instead of hard-coded.
+	 * One setting here changes what the interface means rather than when it is read: the
+	 * **arcus visionis**, the solar elongation below which Venus is invisible, which is what
+	 * fixes the length of the inframonde. It is an observational parameter, not a constant,
+	 * so it is exposed instead of hard-coded.
+	 *
+	 * There is deliberately no "orb" control. A portail is a Moon-Venus conjunction — an
+	 * exact instant — and no threshold makes one more or less real; the distance between the
+	 * two bodies at that instant is reported, not judged. What the reader can see instead is
+	 * how long the interface keeps calling a gate open, which is stated rather than tuned.
 	 */
 	interface Props {
 		/** The moment the chart shows — not necessarily "now". */
@@ -19,11 +23,10 @@
 		now: Date;
 		busy?: boolean;
 		arcusVisionis: number;
-		openOrb: number;
-		tightOrb: number;
+		/** Half-width, in hours, of the window around an exact conjunction. */
+		gateWindowHours: number;
 		onchange: (date: Date) => void;
 		onarcus: (deg: number) => void;
-		onorb: (orb: { openOrb: number; tightOrb: number }) => void;
 	}
 
 	let {
@@ -31,11 +34,9 @@
 		now,
 		busy = false,
 		arcusVisionis,
-		openOrb,
-		tightOrb,
+		gateWindowHours,
 		onchange,
-		onarcus,
-		onorb
+		onarcus
 	}: Props = $props();
 
 	/** `datetime-local` wants a local-time string without a zone. */
@@ -107,34 +108,18 @@
 			<span class="hint">sous ce seuil d’élongation, Vénus est invisible</span>
 		</label>
 
-		<label class="field small">
-			<span class="eyebrow">Orbe d’ouverture · {openOrb}°</span>
-			<input
-				type="range"
-				min="1"
-				max="8"
-				step="0.5"
-				value={openOrb}
-				oninput={(event) => {
-					const next = Number((event.currentTarget as HTMLInputElement).value);
-					onorb({ openOrb: next, tightOrb: Math.min(tightOrb, next) });
-				}}
-			/>
-			<span class="hint">au-delà, la conjonction ne franchit pas la porte</span>
-		</label>
+		<div class="field small fact">
+			<span class="eyebrow">Portail en cours</span>
+			<p class="statement">
+				Un portail est une conjonction <strong>exacte</strong> : l’instant où la Lune et Vénus tiennent le
+				même degré du zodiaque. L’application le donne à l’heure près, et l’écart réel entre les deux
+				astres à cet instant est affiché — jamais jugé.
+			</p>
+			<span class="hint">
+				Le portail reste signalé comme « en cours » {gateWindowHours} h avant et après cet instant.
+			</span>
+		</div>
 
-		<label class="field small">
-			<span class="eyebrow">Portail serré · {tightOrb}°</span>
-			<input
-				type="range"
-				min="0.5"
-				max={openOrb}
-				step="0.5"
-				value={tightOrb}
-				oninput={(event) => onorb({ openOrb, tightOrb: Number((event.currentTarget as HTMLInputElement).value) })}
-			/>
-			<span class="hint">en deçà, la Lune passe au plus près</span>
-		</label>
 	</div>
 
 	<p class="keyboard faint">Flèches ← → pour un jour, maj + flèches pour une semaine, <kbd>n</kbd> pour maintenant.</p>
@@ -231,6 +216,21 @@
 	.hint {
 		font-size: 0.66rem;
 		color: var(--ink-ghost);
+	}
+
+	.fact {
+		border-left: 2px solid var(--venus);
+		padding-left: 0.7rem;
+	}
+
+	.statement {
+		font-size: 0.72rem;
+		color: var(--ink-dim);
+		max-width: 44ch;
+	}
+
+	.statement strong {
+		color: var(--venus);
 	}
 
 	.keyboard {

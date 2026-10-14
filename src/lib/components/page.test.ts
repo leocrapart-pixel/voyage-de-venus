@@ -18,8 +18,19 @@ import { CHAKRA_IMAGE, GATES, spotFor } from '../symbolic/gates';
  * step over explicitly rather than sleeping.
  */
 
-/** A moment whose nearest Moon-Venus conjunction is a tight one — 2024-04-07, orb 0.35°. */
+/**
+ * A moment inside a gate's window.
+ *
+ * The window is half a day either side of the exact conjunction, so a date at midnight is
+ * not necessarily inside it — 2024-04-07's conjunction falls at 18:21 local, and midnight is
+ * more than half a day before that. The tests therefore start from the conjunction's own
+ * instant, taken from the engine rather than typed in.
+ */
 const GATE_DAY = new Date('2024-04-07T00:00:00Z');
+const GATE_MOMENT = computeJourney(GATE_DAY).conjunctions
+	.slice()
+	.sort((a, b) => a.separation - b.separation)
+	.find((p) => Math.abs(p.at.getTime() - GATE_DAY.getTime()) < 2 * 86_400_000)!.at;
 
 async function mountPage(at: Date) {
 	vi.setSystemTime(at);
@@ -49,9 +60,9 @@ describe('the page', () => {
 		expect(screen.getAllByText(/Étoile (du matin|du soir)/).length).toBeGreaterThan(0);
 	});
 
-	it('names the open gate when the Moon is inside the orb', async () => {
-		await mountPage(GATE_DAY);
-		const journey = computeJourney(GATE_DAY);
+	it('names the open gate at the exact instant of the conjunction', async () => {
+		await mountPage(GATE_MOMENT);
+		const journey = computeJourney(GATE_MOMENT);
 		expect(journey.activePassage).not.toBeNull();
 		const gate = journey.activePassage!.gate;
 		expect(screen.getByRole('heading', { level: 1 }).textContent).toContain(gate.name);
@@ -124,15 +135,20 @@ describe('the page', () => {
 		expect(detail?.textContent).toContain(gate.release);
 	});
 
-	it('reports the orb of the open gate, and of the right half of the cycle', async () => {
-		const { container } = await mountPage(GATE_DAY);
-		const journey = computeJourney(GATE_DAY);
+	it('annonce l’instant exact du portail, avec la date et l’heure', async () => {
+		const { container } = await mountPage(GATE_MOMENT);
+		const journey = computeJourney(GATE_MOMENT);
 		const active = journey.activePassage!;
-		// The headline prose reports the orb to one decimal, the detail panel to two.
-		const hero = screen.getByText(/La Lune passe à/).textContent ?? '';
-		const shown = hero.match(/(\d+,\d)°/);
-		expect(shown).not.toBeNull();
-		expect(Math.abs(Number(shown![1].replace(',', '.')) - active.orb)).toBeLessThan(0.06);
+
+		// The hour of the conjunction itself, on the page — the reader is told when the gate
+		// opens, not merely which day.
+		const heroLine = screen.getByText(/Conjonction exacte le/).textContent ?? '';
+		const hhmm = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' }).format(active.at);
+		expect(heroLine).toContain(hhmm);
+		expect(heroLine).toMatch(/\d+\s+\w+\s+\d{4}/);
+
+		// The zodiacal degree of the gate is stated too.
+		expect(heroLine).toMatch(/\d+°\s?\d*\s?\w+/);
 
 		// The detail panel must describe the passage of the same half of the cycle as the
 		// conjunction in progress — the two halves each hold a full descent, so the same
@@ -141,10 +157,19 @@ describe('the page', () => {
 		expect(paired.at.getTime()).toBe(active.at.getTime());
 
 		const detail = container.querySelector('.detail')!;
-		expect(detail.textContent).toContain(paired.orb.toFixed(2).replace('.', ','));
-		expect(detail.textContent).toContain(
-			paired.at.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
-		);
+		expect(detail.textContent).toContain(hhmm);
+		expect(detail.textContent).toContain(paired.separation.toFixed(2).replace('.', ','));
+	});
+
+	it('ne qualifie jamais un portail : ni serré, ni manqué', async () => {
+		const { container } = await mountPage(GATE_DAY);
+		const text = container.textContent ?? '';
+		for (const verdict of ['manqué', 'manquée', 'trop loin', 'serré']) {
+			expect(text).not.toContain(verdict);
+		}
+		// And no control lets the reader grade a gate either.
+		expect(screen.queryByLabelText(/Orbe/)).toBeNull();
+		expect(screen.queryByText(/Orbe d’ouverture/)).toBeNull();
 	});
 
 	it('rebuilds the cycle when the moment steps forward', async () => {

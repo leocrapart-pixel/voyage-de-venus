@@ -107,27 +107,51 @@ chakra est franchi deux fois : la couronne est ouverte au premier rang, puis de 
 huitième. L'application affiche donc, pour chaque centre, **sa prochaine occurrence** — et
 non la première du cycle, qui serait une date de plusieurs mois dans le passé.
 
-L'orbe ne décide donc pas *si* une porte existe, mais *si elle compte*. La conjonction est
-zodiacale — même longitude écliptique — tandis que l'orbe est la séparation réelle dans le
-ciel, qui grandit avec la latitude écliptique de la Lune (jusqu'à 5,3°). Sur 242
-conjonctions de 2018 à 2038, la séparation médiane est de **3,4°** et **42 % seulement**
-tombent dans un orbe de 3°. Le 16 août 2023, la Lune et Vénus sont à la même longitude mais
-à **12,6°** l'une de l'autre : la porte est franchie au sens zodiacal, manquée dans le ciel.
+### Un portail est un instant exact
+
+Le portail **est** la conjonction : l'instant où la Lune et Vénus tiennent le même degré du
+zodiaque. Cet instant est calculé par bisection et donné à la minute, avec son degré.
+L'application ne le qualifie jamais — il n'y a rien à qualifier : une conjonction a lieu ou
+n'a pas lieu.
+
+Deux grandeurs, qu'il ne faut pas confondre :
+
+| | Ce que c'est |
+| --- | --- |
+| **l'instant** | la conjonction en longitude écliptique. C'est la porte, et elle est exacte. |
+| **l'écart** | la distance réelle entre les deux astres à cet instant. C'est une mesure, pas un verdict. |
+
+L'écart vient de la latitude écliptique de la Lune — au moment de la conjonction, le terme
+de longitude est nul, donc toute la distance est de la latitude. Il va jusqu'à 5,3° : à la
+conjonction du 16 août 2023, la Lune et Vénus partagent le même degré tout en étant à
+**12,6°** l'une de l'autre. La porte est ouverte ; c'est simplement que la Lune passe alors
+loin au nord ou au sud. Sur 242 conjonctions de 2018 à 2038, l'écart médian est de 3,4° et
+le plus serré d'un cycle peut descendre à 0,27°.
+
+Les passages au plus près et à l'instant de la conjonction ne coïncident pas exactement :
+mesuré sur un cycle complet, le minimum de séparation tombe **à moins de 1,1 h** de la
+conjonction, et l'application affiche les deux heures dès qu'elles diffèrent de plus d'une
+demi-heure.
+
+Le seul réglage qui subsiste est le **seuil d'invisibilité** (`arcus visionis`), qui ne
+concerne pas les portails mais la longueur de l'inframonde. Une porte reste signalée
+« en cours » 12 h avant et après son instant — c'est une durée d'affichage, pas un seuil de
+validité, et elle ne décide jamais si un portail a eu lieu.
 
 ## Lire l'interface
 
 - **Le bandeau** annonce ce qui se passe : portail ouvert, descente dans l'inframonde, ou
   prochaine conjonction, avec le nombre de jours.
 - **La frise** montre le cycle entier : rétrogradation en rouge, inframonde en violet,
-  conjonction supérieure au milieu, et une graduation par conjonction Vénus-Lune — pleine
-  quand la porte compte, pâle quand l'orbe est manqué. Cliquez la frise pour voyager dans le
-  temps ; le curseur blanc est le moment observé.
+  conjonction supérieure au milieu, et une graduation par conjonction Vénus-Lune — chacune
+  exacte, colorée par le chakra qu'elle ouvre. Survolez une graduation pour lire son heure.
+  Cliquez la frise pour voyager dans le temps ; le curseur blanc est le moment observé.
 - **Le cadran** met le même cycle en un tour : matin à droite, soir à gauche, rétrogradation
   et inframonde au sommet autour de la conjonction inférieure.
 - **Les sept centres** s'allument sur la figure : ouvert, prochain, franchi, ou voilé.
-  Cliquez un centre pour lire le vêtement abandonné et la conjonction qui le porte.
-- **Les réglages** — seuil d'invisibilité, orbe d'ouverture, portail serré — changent la
-  lecture sans changer le ciel.
+  Cliquez un centre pour lire le vêtement abandonné, l'heure exacte de la conjonction et
+  l'écart réel entre la Lune et Vénus.
+- **Le seul réglage** est le seuil d'invisibilité, qui règle la longueur de l'inframonde.
 - **La page `/portails`** présente le jeu de données 1952-2001 audité (voir plus bas) :
   degré mesuré face au degré annoncé, phase réelle, visibilité, et les 62 descriptions
   d'origine.
@@ -170,13 +194,13 @@ que sur sa propre sortie :
 `src/lib/astro/cycle.test.ts` épingle le cycle à des événements publiés : conjonctions
 inférieure et supérieure de 2023 à 2026 à moins de deux heures, stations rétrogrades de
 2023 à moins de six heures, durées de rétrogradation, longueurs d'inframonde aux quatre
-seuils, orbes de conjonctions Vénus-Lune, et la résonance de huit ans.
+seuils, instants et écarts des conjonctions Vénus-Lune, et la résonance de huit ans.
 
 `src/lib/components/page.test.ts` monte la vraie page dans un DOM et vérifie ce que seul un
-navigateur peut casser : la porte ouverte annoncée est bien celle de la conjonction en
-cours, le détail affiche la conjonction de la bonne moitié du cycle, les sept anneaux
-tombent aux positions et rayons mesurés, et régler le seuil d'invisibilité allonge bien la
-bande de l'inframonde.
+navigateur peut casser : l'heure exacte de la conjonction est affichée, le détail décrit la
+conjonction de la bonne moitié du cycle, les sept anneaux tombent aux positions et rayons
+mesurés, régler le seuil d'invisibilité allonge bien la bande de l'inframonde, et **aucun
+verdict** n'apparaît nulle part — ni « serré », ni « manqué », ni un contrôle d'orbe.
 
 ## Le jeu de données 1952-2001
 

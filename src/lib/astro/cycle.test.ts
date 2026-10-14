@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
-	DEFAULT_ORB,
+	GATE_WINDOW_HOURS,
 	computeJourney,
+	isGateOpen,
 	findInvisibilityWindow,
 	findMoonVenusConjunctions,
 	findRetrogradeWindow,
 	findSunVenusConjunctions,
-	gateQuality,
 	passageForGate,
 	type Conjunction
 } from './cycle';
@@ -311,25 +311,40 @@ describe('Moon-Venus conjunctions', () => {
 			.slice()
 			.sort((a, b) => hours(a.at, at('2023-11-09T10:22:00Z')) - hours(b.at, at('2023-11-09T10:22:00Z')))[0];
 		expect(hours(found.at, at('2023-11-09T10:22:00Z'))).toBeLessThan(2);
-		// Measured orb that month: 0.89°.
-		expect(found.orb).toBeGreaterThan(0.5);
-		expect(found.orb).toBeLessThan(1.3);
-		expect(found.quality).toBe('tight');
+		// Measured separation that month: 0.89°, and the closest approach within the hour.
+		expect(found.separation).toBeGreaterThan(0.5);
+		expect(found.separation).toBeLessThan(1.3);
+		expect(Math.abs(hours(found.closestAt, found.at))).toBeLessThan(2);
+		expect(found.closestSeparation).toBeLessThanOrEqual(found.separation + 0.01);
 	});
 
-	it('reports an orb that can be much wider than the zodiacal conjunction', () => {
-		// 2023-08-16: the Moon meets Venus at the same longitude but 4.7° north of it,
-		// so the real separation is nearly 13°. Longitude alone would call that a hit.
+	it('holds the conjunction exact even when the two bodies stand far apart', () => {
+		// 2023-08-16: the Moon meets Venus at the same longitude but 4.7° north of it, so the
+		// real separation is nearly 13°. The conjunction is none the less exact — it is the
+		// latitude that separates them, and the app reports that distance without turning it
+		// into a verdict on the gate.
 		const found = raw
 			.slice()
 			.sort((a, b) => hours(a.at, at('2023-08-16T00:43:00Z')) - hours(b.at, at('2023-08-16T00:43:00Z')))[0];
 		expect(hours(found.at, at('2023-08-16T00:43:00Z'))).toBeLessThan(2);
-		expect(found.orb).toBeGreaterThan(9);
+		expect(found.separation).toBeGreaterThan(9);
 		expect(found.moonLatitude).toBeGreaterThan(4);
-		expect(found.quality).toBe('wide');
+		// The Moon's own longitude is the same as Venus's, to the tolerance of the bisection.
+		expect(Math.abs(found.moonLongitude - found.venusLongitude)).toBeLessThan(0.01);
 	});
 
-	it('measures the orb the way spherical trigonometry does', () => {
+	it('gives every conjunction an exact instant, to the minute', () => {
+		for (const c of raw) {
+			// A real instant, not a rounded hour: the conjunction is bisected to a half-second
+			// stopping rule, so the milliseconds are not zero and are not expected to be.
+			expect(c.at.getMilliseconds()).toBeLessThan(1000);
+			expect(Number.isFinite(c.at.getTime())).toBe(true);
+			// And the two bodies really do hold the same degree there.
+			expect(Math.abs(c.moonLongitude - c.venusLongitude)).toBeLessThan(0.01);
+		}
+	});
+
+	it('measures the separation the way spherical trigonometry does', () => {
 		// Independent check of the reported separation. At a zodiacal conjunction the two
 		// longitudes are equal, so the great-circle separation reduces exactly to the
 		// difference of ecliptic latitudes. A longitude-only "orb" would fail this: at the
@@ -337,7 +352,7 @@ describe('Moon-Venus conjunctions', () => {
 		for (const c of raw) {
 			expect(Math.abs(c.moonLatitude)).toBeLessThan(5.4);
 			expect(Math.abs(c.venusLatitude)).toBeLessThan(9);
-			expect(Math.abs(c.orb - Math.abs(c.moonLatitude - c.venusLatitude))).toBeLessThan(0.35);
+			expect(Math.abs(c.separation - Math.abs(c.moonLatitude - c.venusLatitude))).toBeLessThan(0.35);
 		}
 	});
 
@@ -348,13 +363,15 @@ describe('Moon-Venus conjunctions', () => {
 		expect(raw.length - morning).toBeGreaterThanOrEqual(8);
 	});
 
-	it('classifies the orb quality at its boundaries', () => {
-		expect(gateQuality(0.5)).toBe('tight');
-		expect(gateQuality(1)).toBe('tight');
-		expect(gateQuality(1.01)).toBe('close');
-		expect(gateQuality(3)).toBe('close');
-		expect(gateQuality(3.01)).toBe('wide');
-		expect(gateQuality(2.5, { tightOrb: 1, openOrb: 2 })).toBe('wide');
+	it('never grades a conjunction: there is nothing to grade', () => {
+		// The type has no quality field, and the widest and tightest conjunctions of a cycle
+		// are described by the same fields — an instant and a distance.
+		for (const c of raw) {
+			expect(c).not.toHaveProperty('quality');
+			expect(c).not.toHaveProperty('orb');
+			expect(c.at).toBeInstanceOf(Date);
+			expect(typeof c.separation).toBe('number');
+		}
 	});
 });
 
@@ -424,10 +441,9 @@ describe('gate assignment', () => {
 		expect(journey.conjunctions.length).toBeGreaterThanOrEqual(19);
 	});
 
-	it('marks a passage open only when the Moon is inside the orb', () => {
+	it('marks a passage open only around its exact instant', () => {
 		for (const p of journey.conjunctions) {
-			expect(p.open).toBe(p.orb <= DEFAULT_ORB.openOrb);
-			expect(p.quality).toBe(gateQuality(p.orb));
+			expect(p.open).toBe(isGateOpen(p.at, journey.date));
 		}
 	});
 });
@@ -435,46 +451,71 @@ describe('gate assignment', () => {
 describe('the active gate', () => {
 	/** A conjunction of a given cycle, taken from the cycle itself rather than typed in. */
 	const conjunctions = computeJourney(at('2024-03-01T00:00:00Z')).conjunctions;
-	const tightOne = conjunctions.filter((p) => p.orb < 1).sort((a, b) => a.orb - b.orb)[0];
-	const wideOne = conjunctions.filter((p) => p.orb > 5).sort((a, b) => b.orb - a.orb)[0];
+	const tightOne = conjunctions.filter((p) => p.separation < 1).sort((a, b) => a.separation - b.separation)[0];
+	const wideOne = conjunctions.filter((p) => p.separation > 5).sort((a, b) => b.separation - a.separation)[0];
 
-	it('stands open on a tight conjunction date', () => {
+	it('stands open at the exact instant of a conjunction', () => {
 		expect(tightOne).toBeDefined();
 		const journey = computeJourney(tightOne.at);
 		expect(journey.activePassage).not.toBeNull();
 		expect(journey.activePassage?.gate.key).toBe(tightOne.gate.key);
 		expect(journey.activePassage?.open).toBe(true);
-		expect(journey.activePassage?.orb).toBeLessThan(1);
+		// The instant reported is the conjunction itself, to the millisecond.
+		// Same conjunction, found from a grid opened at a slightly different point: identical
+		// to within the bisection's half-second rule.
+		expect(Math.abs(journey.activePassage!.at.getTime() - tightOne.at.getTime())).toBeLessThan(1000);
+		expect(journey.activePassage?.separation).toBeLessThan(1);
 	});
 
-	it('stays shut on a wide conjunction date', () => {
+	it('is still open on a conjunction whose separation is wide', () => {
 		expect(wideOne).toBeDefined();
 		const journey = computeJourney(wideOne.at);
-		// The Moon met Venus at the same zodiacal degree, but 12° away in the sky: no gate.
-		expect(journey.activePassage).toBeNull();
+		// The Moon met Venus at the same zodiacal degree while standing 12° away in the sky.
+		// The gate is open: the conjunction happened, and the distance is reported, not graded.
+		expect(journey.activePassage).not.toBeNull();
+		expect(journey.activePassage?.separation).toBeGreaterThan(5);
+		expect(Math.abs(journey.activePassage!.at.getTime() - wideOne.at.getTime())).toBeLessThan(1000);
 	});
 
 	it('reports the next gate even when none is open', () => {
-		// Two weeks after a passage the Moon is on the far side of its orbit from Venus.
-		const quiet = shiftDays(conjunctions[3].at, 14);
+		// Two days after a passage the Moon is on the far side of its orbit from Venus.
+		const quiet = shiftDays(conjunctions[3].at, 2);
 		const journey = computeJourney(quiet);
 		expect(journey.nextPassage).not.toBeNull();
 		expect(journey.nextPassage?.at.getTime()).toBeGreaterThan(quiet.getTime());
 	});
 
-	it('never mistakes a distant tight conjunction for an open gate', () => {
-		for (const passage of conjunctions.filter((p) => p.orb < 1.5)) {
-			const journey = computeJourney(shiftDays(passage.at, 14));
+	it('opens the gate only within its stated window, and says which window', () => {
+		const passage = conjunctions.filter((p) => p.separation < 1).sort((a, b) => a.separation - b.separation)[0];
+		const journey = computeJourney(passage.at);
+		// The window is a documented number, not a tuned threshold.
+		expect(journey.gateWindowHours).toBe(GATE_WINDOW_HOURS);
+
+		const hoursFrom = (h: number) => shiftDays(passage.at, h / 24);
+		expect(computeJourney(hoursFrom(-11)).activePassage).not.toBeNull();
+		expect(computeJourney(hoursFrom(11)).activePassage).not.toBeNull();
+		// Just past the half-day mark it is no longer the gate in progress — though the gate
+		// itself, its instant, is unchanged and still reported.
+		expect(computeJourney(hoursFrom(13)).activePassage).toBeNull();
+		expect(computeJourney(hoursFrom(-13)).activePassage).toBeNull();
+	});
+
+	it('closes the gate once its instant is a day behind', () => {
+		for (const passage of conjunctions.filter((p) => p.separation < 1.5)) {
+			const journey = computeJourney(shiftDays(passage.at, 2));
 			expect(journey.activePassage).toBeNull();
 		}
 	});
 
-	it('never reports a gate open while the Moon is far from Venus', () => {
-		for (const passage of conjunctions) {
+	it('never reports a gate open outside its window', () => {
+		// Four moments rather than twenty times three: each one costs a full search through
+		// the ephemeris, and the question is the same at every passage.
+		for (const passage of conjunctions.slice(0, 4)) {
 			for (const offset of [-3, 0, 3]) {
 				const journey = computeJourney(shiftDays(passage.at, offset));
 				if (journey.activePassage) {
-					expect(journey.activePassage.orb).toBeLessThanOrEqual(DEFAULT_ORB.openOrb);
+					// A gate is open only within its own window — never on a neighbouring date.
+					expect(isGateOpen(journey.activePassage.at, journey.date)).toBe(true);
 				}
 			}
 		}
@@ -510,12 +551,13 @@ describe('pairing a gate with its passage', () => {
 	});
 
 	it('returns the open passage itself when its gate is open', () => {
-		const journey = computeJourney(at('2024-04-07T00:00:00Z'));
+		// At the conjunction's own instant, so the gate is inside its window.
+		const journey = computeJourney(at('2024-04-07T16:22:00Z'));
 		const active = journey.activePassage;
 		expect(active).not.toBeNull();
 		if (!active) return;
 		const paired = passageForGate(journey, active.gate.key);
-		expect(paired?.at.getTime()).toBe(active.at.getTime());
+		expect(Math.abs(paired!.at.getTime() - active.at.getTime())).toBeLessThan(1000);
 	});
 
 	it('falls back to the last occurrence when nothing is left ahead', () => {

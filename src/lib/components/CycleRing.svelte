@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { GatePassage, VenusJourney } from '../astro/cycle';
-	import { formatShortDate } from '../format';
+	import { formatShortDate, formatTime, formatZodiac } from '../format';
 
 	/**
 	 * The cycle as a dial: one turn of the wheel is one synodic cycle, from the inferior
@@ -214,8 +214,14 @@
 					onclick={() => onselect(passage)}
 				>
 					<span class="passage-gate">Porte {passage.index} · {passage.gate.name}</span>
-					<span class="passage-when num">{formatShortDate(passage.at)}</span>
-					<span class="passage-orb num">{passage.orb.toFixed(1).replace('.', ',')}°</span>
+					<span class="passage-when num"
+						>{formatShortDate(passage.at)} · {formatTime(passage.at)}</span
+					>
+					<span
+						class="passage-sep num"
+						title="À {formatZodiac(passage.longitude)} — distance réelle entre la Lune et Vénus à cet instant"
+						>{passage.separation.toFixed(1).replace('.', ',')}°</span
+					>
 				</button>
 			</li>
 		{/each}
@@ -275,7 +281,7 @@
 		width: 100%;
 		display: grid;
 		grid-template-columns: 1fr auto;
-		grid-template-areas: 'gate orb' 'when orb';
+		grid-template-areas: 'gate sep' 'when sep';
 		gap: 0 0.6rem;
 		padding: 0.4rem 0.6rem;
 		text-align: left;
@@ -307,8 +313,8 @@
 		color: var(--ink-faint);
 	}
 
-	.passage-orb {
-		grid-area: orb;
+	.passage-sep {
+		grid-area: sep;
 		align-self: center;
 		font-size: 0.8rem;
 		color: var(--gate);

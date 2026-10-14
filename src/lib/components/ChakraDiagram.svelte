@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { passageForGate, type GatePassage, type VenusJourney } from '../astro/cycle';
+	import { formatDayAndTime, formatLatitudeSide, formatTime, formatZodiac } from '../format';
 	import { CHAKRA_IMAGE, GATES, spotFor } from '../symbolic/gates';
 
 	/**
@@ -197,22 +198,30 @@
 					</div>
 					{#if focus.passage}
 						<div>
-							<dt>Conjonction Vénus-Lune</dt>
+							<dt>Conjonction exacte</dt>
 							<dd class="num">
-								{focus.passage.at.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
-								· orbe {focus.passage.orb.toFixed(2).replace('.', ',')}°
+								{formatDayAndTime(focus.passage.at)} · {formatZodiac(focus.passage.longitude)}
 							</dd>
 						</div>
 						<div>
-							<dt>Qualité du portail</dt>
-							<dd>
-								{focus.passage.quality === 'tight'
-									? 'serré — la Lune passe au plus près'
-									: focus.passage.quality === 'close'
-										? 'ouvert — dans l’orbe'
-										: 'manqué — la Lune passe trop loin'}
+							<dt>Écart réel à cet instant</dt>
+							<dd class="num">
+								{focus.passage.separation.toFixed(2).replace('.', ',')}° de Vénus
+								<span class="aside"
+									>la Lune passe {formatLatitudeSide(focus.passage.moonLatitude)}</span
+								>
 							</dd>
 						</div>
+						{#if Math.abs(focus.passage.closestAt.getTime() - focus.passage.at.getTime()) > 30 * 60_000}
+							<div>
+								<dt>Passage au plus près</dt>
+								<dd class="num">
+									{formatTime(focus.passage.closestAt)} · {focus.passage.closestSeparation
+										.toFixed(2)
+										.replace('.', ',')}°
+								</dd>
+							</div>
+						{/if}
 					{/if}
 				</dl>
 			</article>
@@ -220,11 +229,13 @@
 
 		<p class="axis">
 			{#if activePassage}
-				Porte {activePassage.index} ouverte : la Lune est à {activePassage.orb.toFixed(1).replace('.', ',')}° de
-				Vénus{activePassage.index > GATES.length ? ' (second tour de la descente)' : ''}.
+				Porte {activePassage.index} ouverte : conjonction exacte le
+				{formatDayAndTime(activePassage.at)}{activePassage.index > GATES.length
+					? ' (second tour de la descente)'
+					: ''}.
 			{:else if nextPassage}
-				Prochaine porte : {nextPassage.index} · {nextPassage.gate.name}, le
-				{nextPassage.at.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}.
+				Prochaine porte : {nextPassage.index} · {nextPassage.gate.name}, conjonction exacte le
+				{formatDayAndTime(nextPassage.at)}.
 			{:else}
 				Aucune conjonction à venir dans ce cycle.
 			{/if}
@@ -426,6 +437,12 @@
 		margin: 0.1rem 0 0;
 		font-size: 0.82rem;
 		color: var(--ink-dim);
+	}
+
+	.aside {
+		display: block;
+		font-size: 0.7rem;
+		color: var(--ink-ghost);
 	}
 
 	.axis {

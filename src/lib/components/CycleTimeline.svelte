@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { GatePassage, VenusJourney } from '../astro/cycle';
-	import { formatDate, formatShortDate } from '../format';
+	import { formatDate, formatDayAndTime, formatShortDate, formatZodiac } from '../format';
 
 	/**
 	 * The whole cycle on one line of time.
@@ -73,8 +73,8 @@
 				class:open={passage.open}
 				class:selected={selected?.at.getTime() === passage.at.getTime()}
 				style="left:{pct(passage.at)}%;--gate:{passage.gate.color}"
-				title="Porte {passage.index} · {passage.gate.name} — {formatShortDate(passage.at)} · orbe {passage.orb.toFixed(1)}°"
-				aria-label="Porte {passage.index}, {passage.gate.name}, le {formatShortDate(passage.at)}, orbe {passage.orb.toFixed(1)} degrés"
+				title="Porte {passage.index} · {passage.gate.name} — conjonction exacte le {formatDayAndTime(passage.at)}, à {formatZodiac(passage.longitude)}, la Lune à {passage.separation.toFixed(1).replace('.', ',')}° de Vénus"
+				aria-label="Porte {passage.index}, {passage.gate.name}, conjonction exacte le {formatDayAndTime(passage.at)}, la Lune à {passage.separation.toFixed(1)} degrés de Vénus"
 				onclick={(event) => {
 					event.stopPropagation();
 					onselect?.(passage);
@@ -95,7 +95,7 @@
 		<span><i style="background:#ff6b78"></i> rétrogradation</span>
 		<span><i style="background:#8b5cf6;opacity:0.55"></i> inframonde</span>
 		<span><i style="background:#8fb6ff"></i> conjonction supérieure</span>
-		<span>trait plein : portail ouvert · trait pâle : orbe manqué</span>
+		<span>chaque graduation est une conjonction exacte ; survolez-la pour l’heure</span>
 	</div>
 </div>
 

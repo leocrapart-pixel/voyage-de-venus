@@ -27,6 +27,16 @@ const dateOnly = new Intl.DateTimeFormat('fr-FR', {
 
 const shortDate = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short' });
 
+const timeOnly = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' });
+
+const dayAndTime = new Intl.DateTimeFormat('fr-FR', {
+	day: 'numeric',
+	month: 'long',
+	year: 'numeric',
+	hour: '2-digit',
+	minute: '2-digit'
+});
+
 /** "mercredi 13 août 2023 à 13:14 UTC+2" — long form, timezone included. */
 export function formatMoment(date: Date): string {
 	return dateTime.format(date);
@@ -35,6 +45,22 @@ export function formatMoment(date: Date): string {
 /** "13 août 2023" */
 export function formatDate(date: Date): string {
 	return dateOnly.format(date);
+}
+
+/**
+ * "13:14" — the hour a gate opens, in the reader's own timezone.
+ *
+ * A conjunction is a single instant and the app reports it as such; which clock that
+ * instant reads as depends on where the reader is, so the hour is always shown next to the
+ * date rather than inferred from it.
+ */
+export function formatTime(date: Date): string {
+	return timeOnly.format(date);
+}
+
+/** "13 août 2023 à 13:14" — a gate's moment, without repeating the timezone every row. */
+export function formatDayAndTime(date: Date): string {
+	return dayAndTime.format(date).replace(' à ', ' à ');
 }
 
 /** "13 août" — for dense timelines. */
@@ -81,6 +107,12 @@ export function formatZodiac(longitude: number): string {
 	const within = lon - index * 30;
 	const degrees = Math.floor(within);
 	const minutes = Math.round((within - degrees) * 60);
-	if (minutes === 60) return `${degrees + 1}° ${SIGNS[index]}`;
-	return `${degrees}° ${String(minutes).padStart(2, '0')}′ ${SIGNS[index]}`;
+	if (minutes === 60) return `${degrees + 1}°00′ ${SIGNS[index]}`;
+	return `${degrees}°${String(minutes).padStart(2, '0')}′ ${SIGNS[index]}`;
+}
+
+/** "1,2° au nord de l'écliptique" — how far off the ecliptic the Moon passes, and which way. */
+export function formatLatitudeSide(latitude: number, digits = 1): string {
+	const side = latitude >= 0 ? 'au nord' : 'au sud';
+	return `${Math.abs(latitude).toFixed(digits).replace('.', ',')}° ${side} de l’écliptique`;
 }

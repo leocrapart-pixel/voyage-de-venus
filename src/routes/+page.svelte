@@ -1,16 +1,11 @@
 <script lang="ts">
-	import {
-		DEFAULT_ARCUS_VISIONIS,
-		DEFAULT_ORB,
-		computeJourney,
-		type GatePassage
-	} from '#lib/astro/cycle';
+	import { DEFAULT_ARCUS_VISIONIS, computeJourney, type GatePassage } from '#lib/astro/cycle';
 	import ChakraDiagram from '#lib/components/ChakraDiagram.svelte';
 	import CycleRing from '#lib/components/CycleRing.svelte';
 	import CycleTimeline from '#lib/components/CycleTimeline.svelte';
 	import JourneyReadings from '#lib/components/JourneyReadings.svelte';
 	import TimeControls from '#lib/components/TimeControls.svelte';
-	import { formatMoment, formatDays } from '#lib/format';
+	import { formatDayAndTime, formatDays, formatMoment, formatZodiac } from '#lib/format';
 
 	/**
 	 * The Voyage de Vénus.
@@ -42,7 +37,6 @@
 	let busy = $state(false);
 
 	let arcusVisionis = $state(DEFAULT_ARCUS_VISIONIS);
-	let orb = $state({ ...DEFAULT_ORB });
 	let selected = $state<GatePassage | null>(null);
 
 	function commit(date: Date) {
@@ -55,9 +49,7 @@
 		}, 140);
 	}
 
-	const journey = $derived.by(() =>
-		computeJourney(new Date(committedMs), { arcusVisionis, orb })
-	);
+	const journey = $derived.by(() => computeJourney(new Date(committedMs), { arcusVisionis }));
 
 	/** Held so the template re-reads the cycle when the settings change, and so the
 	 *  selected passage can be matched against the rebuilt cycle. */
@@ -75,7 +67,7 @@
 		journey.activePassage
 			? {
 					title: `Portail ouvert · ${journey.activePassage.gate.name}`,
-					line: `La Lune passe à ${journey.activePassage.orb.toFixed(1).replace('.', ',')}° de Vénus : la porte ${journey.activePassage.index} est franchissable, Vénus abandonne ${journey.activePassage.gate.garment}.`,
+					line: `Conjonction exacte le ${formatDayAndTime(journey.activePassage.at)}, à ${formatZodiac(journey.activePassage.longitude)}. La Lune passe alors à ${journey.activePassage.separation.toFixed(1).replace('.', ',')}° de Vénus : la porte ${journey.activePassage.index} est ouverte, Vénus abandonne ${journey.activePassage.gate.garment}.`,
 					tone: 'open'
 				}
 			: journey.inInframonde
@@ -87,7 +79,7 @@
 				: journey.nextPassage
 					? {
 							title: `Prochain portail · ${journey.nextPassage.gate.name}`,
-							line: `Conjonction Vénus-Lune le ${formatMoment(journey.nextPassage.at)}, orbe annoncé ${journey.nextPassage.orb.toFixed(1).replace('.', ',')}° — porte ${journey.nextPassage.index}.`,
+							line: `Conjonction exacte le ${formatDayAndTime(journey.nextPassage.at)}, à ${formatZodiac(journey.nextPassage.longitude)} — porte ${journey.nextPassage.index}. La Lune passera à ${journey.nextPassage.separation.toFixed(1).replace('.', ',')}° de Vénus.`,
 							tone: 'next'
 						}
 					: { title: 'Cycle en cours', line: 'Aucun portail à venir.', tone: 'plain' }
@@ -129,11 +121,9 @@
 			{now}
 			{busy}
 			{arcusVisionis}
-			openOrb={orb.openOrb}
-			tightOrb={orb.tightOrb}
+			gateWindowHours={journey.gateWindowHours}
 			onchange={commit}
 			onarcus={(deg) => (arcusVisionis = deg)}
-			onorb={(next) => (orb = next)}
 		/>
 	</section>
 

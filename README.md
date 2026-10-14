@@ -30,6 +30,11 @@ Le site est servi par **Cloudflare Pages**, projet `voyage-de-venus`, sur le sou
 CLOUDFLARE_API_TOKEN=... CLOUDFLARE_ACCOUNT_ID=... npm run deploy
 ```
 
+Les jetons se passent **par variables d'environnement**, jamais dans un fichier du dépôt :
+`.env*` est ignoré par Git, et rien de tel n'a été committé. Le déploiement automatique sur
+push n'est pas câblé — le brancher demanderait de stocker un jeton dans les secrets GitHub,
+ce qui n'a pas été fait sans ton accord.
+
 `npm run deploy` construit puis téléverse `build/` avec `wrangler pages deploy`. Le dépôt
 GitHub <https://github.com/leocrapart-pixel/voyage-de-venus> contient les mêmes sources.
 

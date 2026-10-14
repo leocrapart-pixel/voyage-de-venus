@@ -35,6 +35,10 @@ Les jetons se passent **par variables d'environnement**, jamais dans un fichier 
 push n'est pas câblé — le brancher demanderait de stocker un jeton dans les secrets GitHub,
 ce qui n'a pas été fait sans ton accord.
 
+Le remote est volontairement sans identifiants (`https://github.com/leocrapart-pixel/voyage-de-venus.git`).
+Pour pousser, authentifie-toi une fois pour toutes avec `gh auth login`, ou configure un
+helper d'identifiants ; sinon `git push` te demandera un nom d'utilisateur et un jeton.
+
 `npm run deploy` construit puis téléverse `build/` avec `wrangler pages deploy`. Le dépôt
 GitHub <https://github.com/leocrapart-pixel/voyage-de-venus> contient les mêmes sources.
 

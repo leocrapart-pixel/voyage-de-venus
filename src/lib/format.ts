@@ -1,0 +1,86 @@
+import { normalizeDegrees } from './astro/ephemeris';
+
+/**
+ * French formatting for the moments the app reports.
+ *
+ * Every date the Voyage de Vénus shows is an instant, and instants are printed in the
+ * reader's own timezone: a conjunction at 11:14 UT is a fact, but "13:14" is what the
+ * reader saw on their clock, so the zone is named next to it wherever the exact hour
+ * matters.
+ */
+
+const dateTime = new Intl.DateTimeFormat('fr-FR', {
+	weekday: 'long',
+	day: 'numeric',
+	month: 'long',
+	year: 'numeric',
+	hour: '2-digit',
+	minute: '2-digit',
+	timeZoneName: 'short'
+});
+
+const dateOnly = new Intl.DateTimeFormat('fr-FR', {
+	day: 'numeric',
+	month: 'long',
+	year: 'numeric'
+});
+
+const shortDate = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short' });
+
+/** "mercredi 13 août 2023 à 13:14 UTC+2" — long form, timezone included. */
+export function formatMoment(date: Date): string {
+	return dateTime.format(date);
+}
+
+/** "13 août 2023" */
+export function formatDate(date: Date): string {
+	return dateOnly.format(date);
+}
+
+/** "13 août" — for dense timelines. */
+export function formatShortDate(date: Date): string {
+	return shortDate.format(date).replace('.', '');
+}
+
+/** Whole days, singular or plural, always rounded towards the nearest day. */
+export function formatDays(days: number): string {
+	const rounded = Math.round(days);
+	return `${rounded} ${Math.abs(rounded) === 1 ? 'jour' : 'jours'}`;
+}
+
+/** One decimal, used for degrees and orbs. French uses a comma for decimals. */
+export function formatDegrees(value: number, digits = 1): string {
+	return `${value.toFixed(digits).replace('.', ',')}°`;
+}
+
+/** Signed degrees, for elongations: "+12,4°" east of the Sun, "−12,4°" west. */
+export function formatSignedDegrees(value: number, digits = 1): string {
+	const sign = value < 0 ? '−' : '+';
+	return `${sign}${Math.abs(value).toFixed(digits).replace('.', ',')}°`;
+}
+
+/** Degrees to the zodiacal sign and degree: 74.2° -> "14° Gémeaux". */
+const SIGNS = [
+	'Bélier',
+	'Taureau',
+	'Gémeaux',
+	'Cancer',
+	'Lion',
+	'Vierge',
+	'Balance',
+	'Scorpion',
+	'Sagittaire',
+	'Capricorne',
+	'Verseau',
+	'Poissons'
+] as const;
+
+export function formatZodiac(longitude: number): string {
+	const lon = normalizeDegrees(longitude);
+	const index = Math.floor(lon / 30);
+	const within = lon - index * 30;
+	const degrees = Math.floor(within);
+	const minutes = Math.round((within - degrees) * 60);
+	if (minutes === 60) return `${degrees + 1}° ${SIGNS[index]}`;
+	return `${degrees}° ${String(minutes).padStart(2, '0')}′ ${SIGNS[index]}`;
+}

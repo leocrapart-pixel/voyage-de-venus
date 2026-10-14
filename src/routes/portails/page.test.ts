@@ -27,7 +27,7 @@ describe('la page des portails', () => {
 		const { container } = render(Page);
 		flushSync();
 		expect(screen.getByRole('heading', { level: 1 }).textContent).toContain('1952');
-		const summary = container.querySelector('.summary')!;
+		const summary = container.querySelector<HTMLElement>('.summary')!;
 		expect(within(summary).getByText(String(voyageVenusData.length))).toBeTruthy();
 		// The finding itself has to be on the page, not buried in a report.
 		expect(summary.querySelector('.alert')).not.toBeNull();

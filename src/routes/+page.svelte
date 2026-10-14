@@ -67,7 +67,12 @@
 		journey.activePassage
 			? {
 					title: `Portail ouvert · ${journey.activePassage.gate.name}`,
-					line: `Conjonction exacte le ${formatDayAndTime(journey.activePassage.at)}, à ${formatZodiac(journey.activePassage.longitude)}. La Lune passe alors à ${journey.activePassage.separation.toFixed(1).replace('.', ',')}° de Vénus : la porte ${journey.activePassage.index} est ouverte, Vénus abandonne ${journey.activePassage.gate.garment}.`,
+					line:
+						`Conjonction exacte le ${formatDayAndTime(journey.activePassage.at)}, à ${formatZodiac(journey.activePassage.longitude)}. ` +
+						`La Lune passe alors à ${journey.activePassage.separation.toFixed(1).replace('.', ',')}° de Vénus : ` +
+						('garment' in journey.activePassage.gate
+							? `la porte ${journey.activePassage.index} est ouverte, Vénus abandonne ${journey.activePassage.gate.garment}.`
+							: `seuil ${journey.activePassage.index} franchi, ${journey.activePassage.gate.name.toLowerCase()} : ${journey.activePassage.gate.meaning}`),
 					tone: 'open'
 				}
 			: journey.inInframonde

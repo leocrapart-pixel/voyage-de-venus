@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { passageForGate, type GatePassage, type VenusJourney } from '../astro/cycle';
 	import { formatDayAndTime, formatLatitudeSide, formatTime, formatZodiac } from '../format';
-	import { CHAKRA_IMAGE, GATES, spotFor } from '../symbolic/gates';
+	import { CHAKRA_IMAGE, GATES, GATE_COUNT, spotFor, type Gate, type Threshold } from '../symbolic/gates';
 
 	/**
 	 * The seven centres, drawn over the chakra figure.
@@ -32,10 +32,7 @@
 	interface Centre {
 		key: string;
 		name: string;
-		sanskrit: string;
 		index: number;
-		garment: string;
-		release: string;
 		color: string;
 		x: number;
 		y: number;
@@ -43,6 +40,8 @@
 		r: number;
 		state: State;
 		passage: GatePassage | null;
+		/** The chakra, or the threshold when this half holds eight portals. */
+		portal: Gate | Threshold;
 	}
 
 	const activePassage = $derived(journey.activePassage);
@@ -50,6 +49,18 @@
 	/** True once the reader has picked a centre themselves. */
 	const picked = $derived(selected?.gate.key ?? null);
 
+	/**
+	 * The portals of the half of the cycle in progress, in order.
+	 *
+	 * Seven of them, or eight when this half happens to hold one observable conjunction
+	 * more — in which case the eighth is the threshold rather than a chakra, and it is drawn
+	 * apart from the body because it has no place on it.
+	 */
+	const portals = $derived(
+		(journey.star === 'morning' ? journey.morning.portals : journey.evening.portals).slice()
+	);
+
+	/** The seven chakras, with the state the reader's half gives them. */
 	const centres = $derived<Centre[]>(
 		GATES.map((gate) => {
 			const spot = spotFor(gate.key);
@@ -65,24 +76,46 @@
 			return {
 				key: gate.key,
 				name: gate.name,
-				sanskrit: gate.sanskrit,
 				index: gate.index,
-				garment: gate.garment,
-				release: gate.release,
 				color: gate.color,
 				x: spot.x * CHAKRA_IMAGE.width,
 				y: spot.y * CHAKRA_IMAGE.height,
 				r: spot.r * CHAKRA_IMAGE.width,
 				state,
-				passage
+				passage,
+				portal: gate
 			};
 		})
 	);
 
-	const focus = $derived(
-		(picked ? centres.find((c) => c.key === picked) : null) ??
+	/** The threshold of this half, when it has one. */
+	const seuil = $derived(portals.length > GATE_COUNT ? portals[GATE_COUNT] : null);
+
+	const seuilState = $derived<State>(
+		!seuil
+			? 'voilé'
+			: seuil.gate.key === activePassage?.gate.key
+				? 'ouvert'
+				: seuil.gate.key === nextPassage?.gate.key
+					? 'prochain'
+					: seuil.at.getTime() < journey.date.getTime()
+						? 'franchi'
+						: 'voilé'
+	);
+
+	/**
+	 * The step the detail panel describes: an explicitly picked centre, otherwise the one
+	 * standing open, otherwise the next one. A step is a chakra or, once per half, the
+	 * threshold that closes it.
+	 */
+	type Step = Centre | { seuil: NonNullable<typeof seuil>; state: State };
+
+	const focus = $derived<Step | null>(
+		(picked ? (centres.find((c) => c.key === picked) ?? (seuil && seuil.gate.key === picked ? { seuil, state: seuilState } : null)) : null) ??
 			centres.find((c) => c.state === 'ouvert') ??
+			(seuil && seuilState === 'ouvert' ? { seuil, state: seuilState } : null) ??
 			centres.find((c) => c.state === 'prochain') ??
+			(seuil && seuilState === 'prochain' ? { seuil, state: seuilState } : null) ??
 			null
 	);
 
@@ -143,6 +176,24 @@
 					/>
 					<circle class="gate-hit" cx={c.x} cy={c.y} r={Math.max(c.r + 6, 34)} fill="transparent" />
 				{/each}
+				{#if seuil}
+					<!-- The threshold is not on the body, so it is drawn as a band that closes
+					     the axis rather than as a point on it. -->
+					<circle
+						class="seuil-mark"
+						cx="298"
+						cy="742"
+						r="20"
+						fill="none"
+						stroke={seuil.gate.color}
+						stroke-width={seuilState === 'ouvert' ? 2.6 : seuilState === 'prochain' ? 2 : 1.2}
+						stroke-dasharray={seuilState === 'voilé' ? '3 4' : 'none'}
+						opacity={seuilState === 'voilé' ? 0.45 : 1}
+					/>
+					<text x="298" y="747" text-anchor="middle" font-size="13" fill={seuil.gate.color} opacity="0.95">
+						8
+					</text>
+				{/if}
 			</svg>
 		</div>
 		<p class="credit">
@@ -165,7 +216,7 @@
 					>
 						<span class="marker">{c.index}</span>
 						<span class="text">
-							<span class="name">{c.name}<em>{c.sanskrit}</em></span>
+							<span class="name">{c.name}<em>{(c.portal as Gate).sanskrit}</em></span>
 							<span class="state">{
 								c.state === 'ouvert'
 									? 'portail ouvert'
@@ -179,22 +230,89 @@
 					</button>
 				</li>
 			{/each}
+			{#if seuil}
+				<li>
+					<button
+						type="button"
+						class="gate {seuilState} seuil"
+						class:selected={selected?.gate.key === seuil.gate.key}
+						style="--gate:{seuil.gate.color}"
+						onclick={() => onselect?.(selected?.gate.key === seuil.gate.key ? null : seuil)}
+						aria-pressed={selected?.gate.key === seuil.gate.key}
+					>
+						<span class="marker">8</span>
+						<span class="text">
+							<span class="name"
+								>{seuil.gate.name}<em
+									>seuil 8 · {journey.star === 'morning' ? 'la descente s’achève' : 'la sortie de l’enfer'}</em
+								></span
+							>
+							<span class="state">{
+								seuilState === 'ouvert'
+									? 'seuil franchi'
+									: seuilState === 'prochain'
+										? 'prochain seuil'
+										: seuilState === 'franchi'
+											? 'franchi'
+											: 'à venir'
+							}</span>
+						</span>
+					</button>
+				</li>
+			{/if}
 		</ul>
 
-		{#if focus}
-			<article class="detail" style="--gate:{focus.color}">
+		{#if focus && 'seuil' in focus}
+			{@const t = focus.seuil.gate}
+			{@const p = focus.seuil}
+			<article class="detail" style="--gate:{t.color}">
 				<header>
-					<span class="eyebrow">Porte {focus.index} · {focus.sanskrit}</span>
-					<h3>{focus.name}</h3>
+					<span class="eyebrow"
+						>Seuil 8 · {'meaning' in t && t.star === 'morning'
+							? 'fin de la descente, la mort'
+							: 'sortie de l’enfer, la vie'}</span
+					>
+					<h3>{t.name}</h3>
+				</header>
+				<dl>
+					{#if 'meaning' in t}
+						<div>
+							<dt>Ce qu’est ce seuil</dt>
+							<dd>{t.meaning}</dd>
+						</div>
+						<div>
+							<dt>Ancrage astronomique</dt>
+							<dd>{t.anchor}</dd>
+						</div>
+					{/if}
+					<div>
+						<dt>Conjonction exacte</dt>
+						<dd class="num">{formatDayAndTime(p.at)} · {formatZodiac(p.longitude)}</dd>
+					</div>
+					<div>
+						<dt>Écart réel à cet instant</dt>
+						<dd class="num">
+							{p.separation.toFixed(2).replace('.', ',')}° de Vénus
+							<span class="aside">la Lune passe {formatLatitudeSide(p.moonLatitude)}</span>
+						</dd>
+					</div>
+				</dl>
+			</article>
+		{:else if focus}
+			{@const g = focus.portal as Gate}
+			<article class="detail" style="--gate:{g.color}">
+				<header>
+					<span class="eyebrow">Porte {g.index} · {g.sanskrit}</span>
+					<h3>{g.name}</h3>
 				</header>
 				<dl>
 					<div>
 						<dt>Vêtement abandonné</dt>
-						<dd>{focus.garment}</dd>
+						<dd>{g.garment}</dd>
 					</div>
 					<div>
 						<dt>Ce qui est lâché</dt>
-						<dd>{focus.release}</dd>
+						<dd>{g.release}</dd>
 					</div>
 					{#if focus.passage}
 						<div>
@@ -228,17 +346,22 @@
 		{/if}
 
 		<p class="axis">
+			<strong
+				>{portals.length} portails dans cette moitié du cycle</strong
+			>{portals.length > GATE_COUNT
+				? ' — les sept chakras, puis le seuil.'
+				: ' — les sept chakras.'}
 			{#if activePassage}
-				Porte {activePassage.index} ouverte : conjonction exacte le
-				{formatDayAndTime(activePassage.at)}{activePassage.index > GATES.length
-					? ' (second tour de la descente)'
-					: ''}.
+				Portail ouvert : {activePassage.index} · {activePassage.gate.name}, conjonction exacte le
+				{formatDayAndTime(activePassage.at)}.
 			{:else if nextPassage}
-				Prochaine porte : {nextPassage.index} · {nextPassage.gate.name}, conjonction exacte le
+				Prochain portail : {nextPassage.index} · {nextPassage.gate.name}, conjonction exacte le
 				{formatDayAndTime(nextPassage.at)}.
 			{:else}
-				Aucune conjonction à venir dans ce cycle.
+				Aucun portail à venir dans cette moitié.
 			{/if}
+			Les {journey.conjunctions.length - (journey.morning.portals.length + journey.evening.portals.length)}
+			conjonctions sous le seuil de {journey.portalVisibility}° d’élongation n’ouvrent pas de portail.
 		</p>
 	</div>
 </div>

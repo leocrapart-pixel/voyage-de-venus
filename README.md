@@ -107,6 +107,41 @@ chakra est franchi deux fois : la couronne est ouverte au premier rang, puis de 
 huitième. L'application affiche donc, pour chaque centre, **sa prochaine occurrence** — et
 non la première du cycle, qui serait une date de plusieurs mois dans le passé.
 
+### Sept portails par moitié, ou huit — et le huitième est un seuil
+
+Un portail n'est pas n'importe quelle conjonction Vénus-Lune. La Lune rencontre Vénus environ
+une fois par mois, soit une dizaine de fois par moitié de cycle : mais une conjonction ne
+compte comme portail que si elle est **observable**. En dessous d'une quinzaine de degrés
+d'élongation au Soleil, le couple est noyé dans le crépuscule et la rencontre a lieu hors de
+vue.
+
+Ce critère unique, appliqué à **250 moitiés de cycle entre 1900 et 2100**, donne
+**7 portails 105 fois et 8 portails 145 fois — jamais autre chose**. La forme du mythe n'est
+donc pas plaquée sur le ciel : elle en découle, d'un seuil qui est observationnel et non
+symbolique.
+
+Quand une moitié en compte huit, le huitième n'est pas un chakra de plus. C'est le
+**retour** : Inanna remonte changée, et ce qui s'ouvre n'est plus un rang mais une intention.
+
+| Seuil 8 | Ce qu'il est | Ancrage |
+| --- | --- | --- |
+| **Mort intentionnelle** | la descente s'achève, Inanna meurt | coucher héliaque de Vénus, quelques jours avant la conjonction inférieure |
+| **Vie intentionnelle** | la sortie de l'enfer, elle remonte | lever héliaque de Vénus, quelques jours après la conjonction inférieure |
+
+Un seuil n'a volontairement pas la forme d'un chakra : ni nom sanskrit, ni place sur le
+corps, ni vêtement — rien ne lui est retiré. Il est dessiné à part de la figure, en bas de
+l'axe, parce qu'il n'a pas de lieu sur le corps.
+
+Sur le cycle en cours (2025-03-23 → 2026-10-24), le compte tombe exactement ainsi :
+
+| Moitié | Portails | Détail |
+| --- | --- | --- |
+| Matin — la descente | **7** | Couronne 25 avr. · Front 23 mai · Gorge 22 juin · Cœur 21 juil. · Plexus 20 août · Ventre 19 sept. · Racine 19 oct. 2025 |
+| Soir — l'ascension | **8** | Couronne 20 mars · Front 19 avr. · Gorge 19 mai · Cœur 17 juin · Plexus 17 juil. · Ventre 16 août · Racine 14 sept. · **Vie intentionnelle 12 oct. 2026** |
+
+Les cinq conjonctions restantes du cycle tombent sous le seuil d'observabilité et n'ouvrent
+aucun portail : elles sont listées, parce qu'elles ont eu lieu, mais sans rang.
+
 ### Un portail est un instant exact
 
 Le portail **est** la conjonction : l'instant où la Lune et Vénus tiennent le même degré du

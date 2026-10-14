@@ -27,10 +27,9 @@ import { CHAKRA_IMAGE, GATES, spotFor } from '../symbolic/gates';
  * instant, taken from the engine rather than typed in.
  */
 const GATE_DAY = new Date('2024-04-07T00:00:00Z');
-const GATE_MOMENT = computeJourney(GATE_DAY).conjunctions
-	.slice()
-	.sort((a, b) => a.separation - b.separation)
-	.find((p) => Math.abs(p.at.getTime() - GATE_DAY.getTime()) < 2 * 86_400_000)!.at;
+const GATE_MOMENT = computeJourney(GATE_DAY)
+	.conjunctions.filter((p) => p.observable)
+	.sort((a, b) => Math.abs(a.at.getTime() - GATE_DAY.getTime()) - Math.abs(b.at.getTime() - GATE_DAY.getTime()))[0].at;
 
 async function mountPage(at: Date) {
 	vi.setSystemTime(at);
@@ -61,12 +60,17 @@ describe('the page', () => {
 	});
 
 	it('names the open gate at the exact instant of the conjunction', async () => {
+		// GATE_MOMENT is the instant of a portal, taken from the engine, so the gate is open
+		// and the heading names it. The axis paragraph also mentions an open portal, so the
+		// heading is what gets checked.
 		await mountPage(GATE_MOMENT);
 		const journey = computeJourney(GATE_MOMENT);
 		expect(journey.activePassage).not.toBeNull();
 		const gate = journey.activePassage!.gate;
 		expect(screen.getByRole('heading', { level: 1 }).textContent).toContain(gate.name);
-		expect(screen.getByText(/Portail ouvert/)).toBeTruthy();
+		expect(screen.getByRole('heading', { level: 1 }).textContent).toContain('Portail ouvert');
+		// A portal is always an observable conjunction.
+		expect(Math.abs(journey.activePassage!.elongation)).toBeGreaterThanOrEqual(journey.portalVisibility);
 	});
 
 	it('lists the seven gates with their Sanskrit names', async () => {
@@ -74,14 +78,17 @@ describe('the page', () => {
 		// Each centre appears both in the gate list and, when focus lands on it, in the
 		// detail panel — so the list itself is the thing to count.
 		const list = container.querySelector('.gates ul')!;
-		const names = Array.from(list.querySelectorAll('.name')).map((el) =>
-			el.textContent?.replace(/\s+/g, ' ').trim()
+		const rows = Array.from(list.querySelectorAll('.name')).map((el) =>
+			el.textContent?.replace(/\s+/g, ' ').trim() ?? ''
 		);
-		expect(names.length).toBe(GATES.length);
+		// Seven chakras always; an eighth row only when this half of the cycle holds one
+		// portal more, and then it is the threshold rather than a chakra.
+		expect([GATES.length, GATES.length + 1]).toContain(rows.length);
 		for (const [index, gate] of GATES.entries()) {
-			expect(names[index]).toContain(gate.name);
-			expect(names[index]).toContain(gate.sanskrit);
+			expect(rows[index]).toContain(gate.name);
+			expect(rows[index]).toContain(gate.sanskrit);
 		}
+		expect(rows.slice(GATES.length).join(' ')).toMatch(/intentionnelle/);
 	});
 
 	it('renders the chakra figure with the seven measured hotspots', async () => {

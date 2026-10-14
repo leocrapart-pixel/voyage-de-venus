@@ -69,10 +69,9 @@
 					title: `Portail ouvert · ${journey.activePassage.gate.name}`,
 					line:
 						`Conjonction exacte le ${formatDayAndTime(journey.activePassage.at)}, à ${formatZodiac(journey.activePassage.longitude)}. ` +
-						`La Lune passe alors à ${journey.activePassage.separation.toFixed(1).replace('.', ',')}° de Vénus : ` +
 						('garment' in journey.activePassage.gate
-							? `la porte ${journey.activePassage.index} est ouverte, Vénus abandonne ${journey.activePassage.gate.garment}.`
-							: `seuil ${journey.activePassage.index} franchi, ${journey.activePassage.gate.name.toLowerCase()} : ${journey.activePassage.gate.meaning}`),
+							? `La porte ${journey.activePassage.index} est ouverte, Vénus abandonne ${journey.activePassage.gate.garment}.`
+							: `Seuil ${journey.activePassage.index} franchi, ${journey.activePassage.gate.name.toLowerCase()} : ${journey.activePassage.gate.meaning}`),
 					tone: 'open'
 				}
 			: journey.inInframonde
@@ -84,7 +83,7 @@
 				: journey.nextPassage
 					? {
 							title: `Prochain portail · ${journey.nextPassage.gate.name}`,
-							line: `Conjonction exacte le ${formatDayAndTime(journey.nextPassage.at)}, à ${formatZodiac(journey.nextPassage.longitude)} — porte ${journey.nextPassage.index}. La Lune passera à ${journey.nextPassage.separation.toFixed(1).replace('.', ',')}° de Vénus.`,
+							line: `Conjonction exacte le ${formatDayAndTime(journey.nextPassage.at)}, à ${formatZodiac(journey.nextPassage.longitude)} — porte ${journey.nextPassage.index}.`,
 							tone: 'next'
 						}
 					: { title: 'Cycle en cours', line: 'Aucun portail à venir.', tone: 'plain' }
@@ -126,7 +125,6 @@
 			{now}
 			{busy}
 			{arcusVisionis}
-			gateWindowHours={journey.gateWindowHours}
 			onchange={commit}
 			onarcus={(deg) => (arcusVisionis = deg)}
 		/>
@@ -161,18 +159,10 @@
 		<ChakraDiagram {journey} {selected} onselect={(p) => selectPassage(p)} />
 	</section>
 
-	<footer>
+	<footer class="faint">
 		<p>
-			<strong>Comment lire ces chiffres.</strong> Le cycle est mesuré, jamais supposé : la durée réelle varie de
-			580 à 588 jours selon le cycle, chaque date est cherchée dans l’éphéméride, et la longueur de l’inframonde
-			découle du seuil de visibilité que vous réglez. Le nombre de conjonctions Vénus-Lune par cycle est de 19 à
-			23, réparties à peu près également entre l’étoile du matin et l’étoile du soir ; les sept portails sont donc
-			<em>attribués</em> dans l’ordre de la descente, et non détectés — l’orbe indique seulement si la Lune passe
-			assez près pour que la porte compte.
-		</p>
-		<p class="faint">
-			Positions : Astronomy Engine, géocentriques tropicales apparentes. Les centres des chakras sont mesurés
-			pixel par pixel dans la figure. Cycle de <span class="num">{journey.synodicDays.toFixed(2).replace('.', ',')} jours</span>.
+			Positions géocentriques tropicales apparentes, calculées dans le navigateur. Figure des chakras :
+			positions des centres mesurées dans l’image.
 		</p>
 	</footer>
 </main>
@@ -306,10 +296,5 @@
 		font-size: 0.76rem;
 		color: var(--ink-faint);
 		max-width: 82ch;
-	}
-
-	footer em {
-		color: var(--ink-dim);
-		font-style: italic;
 	}
 </style>

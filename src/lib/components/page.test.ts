@@ -165,7 +165,11 @@ describe('the page', () => {
 
 		const detail = container.querySelector('.detail')!;
 		expect(detail.textContent).toContain(hhmm);
-		expect(detail.textContent).toContain(paired.separation.toFixed(2).replace('.', ','));
+		// The detail says when the gate opens and at what degree — nothing more. The distance
+		// between the two bodies is no longer displayed: it is a measurement, not a datum the
+		// reader asked for, and since the orb left the model there is nothing to compare it to.
+		expect(detail.textContent).toContain(paired.longitude.toFixed(0));
+		expect(detail.textContent).not.toMatch(/\d,\d\d° de Vénus/);
 	});
 
 	it('ne qualifie jamais un portail : ni serré, ni manqué', async () => {

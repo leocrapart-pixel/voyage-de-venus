@@ -73,8 +73,8 @@
 				class:open={passage.open}
 				class:selected={selected?.at.getTime() === passage.at.getTime()}
 				style="left:{pct(passage.at)}%;--gate:{passage.gate.color}"
-				title="Porte {passage.index} · {passage.gate.name} — conjonction exacte le {formatDayAndTime(passage.at)}, à {formatZodiac(passage.longitude)}, la Lune à {passage.separation.toFixed(1).replace('.', ',')}° de Vénus"
-				aria-label="Porte {passage.index}, {passage.gate.name}, conjonction exacte le {formatDayAndTime(passage.at)}, la Lune à {passage.separation.toFixed(1)} degrés de Vénus"
+				title="{passage.index} · {passage.gate.name} — {formatDayAndTime(passage.at)}, à {formatZodiac(passage.longitude)}"
+				aria-label="{passage.index}, {passage.gate.name}, conjonction exacte le {formatDayAndTime(passage.at)}, à {formatZodiac(passage.longitude)}"
 				onclick={(event) => {
 					event.stopPropagation();
 					onselect?.(passage);
@@ -95,7 +95,7 @@
 		<span><i style="background:#ff6b78"></i> rétrogradation</span>
 		<span><i style="background:#8b5cf6;opacity:0.55"></i> inframonde</span>
 		<span><i style="background:#8fb6ff"></i> conjonction supérieure</span>
-		<span>chaque graduation est une conjonction exacte ; survolez-la pour l’heure</span>
+		<span>chaque graduation est un portail</span>
 	</div>
 </div>
 

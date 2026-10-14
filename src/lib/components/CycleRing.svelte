@@ -214,13 +214,9 @@
 					onclick={() => onselect(passage)}
 				>
 					<span class="passage-gate">Porte {passage.index} · {passage.gate.name}</span>
-					<span class="passage-when num"
-						>{formatShortDate(passage.at)} · {formatTime(passage.at)}</span
-					>
-					<span
-						class="passage-sep num"
-						title="À {formatZodiac(passage.longitude)} — distance réelle entre la Lune et Vénus à cet instant"
-						>{passage.separation.toFixed(1).replace('.', ',')}°</span
+					<span class="passage-when num">{formatShortDate(passage.at)}</span>
+					<span class="passage-sep num" title={formatZodiac(passage.longitude)}
+						>{formatTime(passage.at)}</span
 					>
 				</button>
 			</li>

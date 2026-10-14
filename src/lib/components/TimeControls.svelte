@@ -6,15 +6,11 @@
 	 * recast on every keystroke: the route debounces the chosen moment (see
 	 * `src/routes/+page.svelte`).
 	 *
-	 * One setting here changes what the interface means rather than when it is read: the
-	 * **arcus visionis**, the solar elongation below which Venus is invisible, which is what
-	 * fixes the length of the inframonde. It is an observational parameter, not a constant,
-	 * so it is exposed instead of hard-coded.
-	 *
-	 * There is deliberately no "orb" control. A portail is a Moon-Venus conjunction — an
-	 * exact instant — and no threshold makes one more or less real; the distance between the
-	 * two bodies at that instant is reported, not judged. What the reader can see instead is
-	 * how long the interface keeps calling a gate open, which is stated rather than tuned.
+	 * The one setting is the **arcus visionis**, the solar elongation below which Venus is
+	 * invisible, which is what fixes the length of the inframonde. It is an observational
+	 * parameter rather than a constant, so it is exposed instead of hard-coded. There is
+	 * deliberately no "orb" control: a portail is an exact instant, and no threshold makes
+	 * one more or less real.
 	 */
 	interface Props {
 		/** The moment the chart shows — not necessarily "now". */
@@ -23,8 +19,6 @@
 		now: Date;
 		busy?: boolean;
 		arcusVisionis: number;
-		/** Half-width, in hours, of the window around an exact conjunction. */
-		gateWindowHours: number;
 		onchange: (date: Date) => void;
 		onarcus: (deg: number) => void;
 	}
@@ -34,7 +28,6 @@
 		now,
 		busy = false,
 		arcusVisionis,
-		gateWindowHours,
 		onchange,
 		onarcus
 	}: Props = $props();
@@ -107,18 +100,6 @@
 			/>
 			<span class="hint">sous ce seuil d’élongation, Vénus est invisible</span>
 		</label>
-
-		<div class="field small fact">
-			<span class="eyebrow">Portail en cours</span>
-			<p class="statement">
-				Un portail est une conjonction <strong>exacte</strong> : l’instant où la Lune et Vénus tiennent le
-				même degré du zodiaque. L’application le donne à l’heure près, et l’écart réel entre les deux
-				astres à cet instant est affiché — jamais jugé.
-			</p>
-			<span class="hint">
-				Le portail reste signalé comme « en cours » {gateWindowHours} h avant et après cet instant.
-			</span>
-		</div>
 
 	</div>
 
@@ -216,21 +197,6 @@
 	.hint {
 		font-size: 0.66rem;
 		color: var(--ink-ghost);
-	}
-
-	.fact {
-		border-left: 2px solid var(--venus);
-		padding-left: 0.7rem;
-	}
-
-	.statement {
-		font-size: 0.72rem;
-		color: var(--ink-dim);
-		max-width: 44ch;
-	}
-
-	.statement strong {
-		color: var(--venus);
 	}
 
 	.keyboard {

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { passageForGate, type GatePassage, type VenusJourney } from '../astro/cycle';
-	import { formatDayAndTime, formatLatitudeSide, formatTime, formatZodiac } from '../format';
+	import { formatDayAndTime, formatZodiac } from '../format';
 	import { CHAKRA_IMAGE, GATES, GATE_COUNT, spotFor, type Gate, type Threshold } from '../symbolic/gates';
 
 	/**
@@ -289,13 +289,6 @@
 						<dt>Conjonction exacte</dt>
 						<dd class="num">{formatDayAndTime(p.at)} · {formatZodiac(p.longitude)}</dd>
 					</div>
-					<div>
-						<dt>Écart réel à cet instant</dt>
-						<dd class="num">
-							{p.separation.toFixed(2).replace('.', ',')}° de Vénus
-							<span class="aside">la Lune passe {formatLatitudeSide(p.moonLatitude)}</span>
-						</dd>
-					</div>
 				</dl>
 			</article>
 		{:else if focus}
@@ -321,50 +314,19 @@
 								{formatDayAndTime(focus.passage.at)} · {formatZodiac(focus.passage.longitude)}
 							</dd>
 						</div>
-						<div>
-							<dt>Écart réel à cet instant</dt>
-							<dd class="num">
-								{focus.passage.separation.toFixed(2).replace('.', ',')}° de Vénus
-								<span class="aside"
-									>la Lune passe {formatLatitudeSide(focus.passage.moonLatitude)}</span
-								>
-							</dd>
-						</div>
-						{#if Math.abs(focus.passage.closestAt.getTime() - focus.passage.at.getTime()) > 30 * 60_000}
-							<div>
-								<dt>Passage au plus près</dt>
-								<dd class="num">
-									{formatTime(focus.passage.closestAt)} · {focus.passage.closestSeparation
-										.toFixed(2)
-										.replace('.', ',')}°
-								</dd>
-							</div>
-						{/if}
 					{/if}
 				</dl>
 			</article>
 		{/if}
 
 		<p class="axis">
-			<strong
-				>{portals.length} portails dans cette moitié du cycle</strong
-			>{portals.length > GATE_COUNT
-				? ' — les sept chakras, puis le seuil.'
-				: ' — les sept chakras.'}
-			Les deux moitiés en comptent autant
-			({journey.morning.portals.length} et {journey.evening.portals.length}) : c'est la moitié la plus pauvre qui
-			fixe le compte, et ce que l'autre ne peut pas placer reste dans l'inframonde.
 			{#if activePassage}
-				Portail ouvert : {activePassage.index} · {activePassage.gate.name}, conjonction exacte le
-				{formatDayAndTime(activePassage.at)}.
+				Portail ouvert : {activePassage.index} · {activePassage.gate.name} — {formatDayAndTime(activePassage.at)}.
 			{:else if nextPassage}
-				Prochain portail : {nextPassage.index} · {nextPassage.gate.name}, conjonction exacte le
-				{formatDayAndTime(nextPassage.at)}.
+				Prochain portail : {nextPassage.index} · {nextPassage.gate.name} — {formatDayAndTime(nextPassage.at)}.
 			{:else}
-				Aucun portail à venir dans cette moitié.
+				Aucun portail à venir dans cette moitié du cycle.
 			{/if}
-			Les {journey.conjunctions.length - (journey.morning.portals.length + journey.evening.portals.length)}
-			conjonctions sous le seuil de {journey.portalVisibility}° d’élongation n’ouvrent pas de portail.
 		</p>
 	</div>
 </div>

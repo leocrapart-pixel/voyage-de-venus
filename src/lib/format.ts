@@ -25,6 +25,13 @@ const dateOnly = new Intl.DateTimeFormat('fr-FR', {
 	year: 'numeric'
 });
 
+/** Compact: "13 avr. 2025". For notes that only need to place an event in time. */
+const compactDate = new Intl.DateTimeFormat('fr-FR', {
+	day: 'numeric',
+	month: 'short',
+	year: 'numeric'
+});
+
 const shortDate = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short' });
 
 const timeOnly = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' });
@@ -61,6 +68,11 @@ export function formatTime(date: Date): string {
 /** "13 août 2023 à 13:14" — a gate's moment, without repeating the timezone every row. */
 export function formatDayAndTime(date: Date): string {
 	return dayAndTime.format(date).replace(' à ', ' à ');
+}
+
+/** "13 avr. 2025" — a date without the weekday or the timezone. */
+export function formatCompactDate(date: Date): string {
+	return compactDate.format(date).replace('.', '');
 }
 
 /** "13 août" — for dense timelines. */

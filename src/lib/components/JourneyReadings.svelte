@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { VenusJourney } from '../astro/cycle';
-	import { formatMoment, formatSignedDegrees, formatZodiac } from '../format';
+	import { formatCompactDate, formatDate, formatDays, formatSignedDegrees, formatZodiac } from '../format';
 
 	/**
 	 * The readings for the current moment, as a list of labelled values.
@@ -36,7 +36,7 @@
 		}
 		const to = j.retrograde.retrogradeStation.at.getTime() - j.date.getTime();
 		if (to > 0) return `station rétrograde dans ${Math.round(to)} j`;
-		return `terminée le ${formatMoment(j.retrograde.directStation.at)}`;
+		return `terminée le ${formatCompactDate(j.retrograde.directStation.at)}`;
 	}
 
 	interface Reading {
@@ -56,15 +56,13 @@
 		{
 			label: 'Élongation au Soleil',
 			value: formatSignedDegrees(journey.elongation),
-			note: journey.inInframonde
-				? `dans l’inframonde — sous le seuil de ${journey.arcusVisionis}°`
-				: `angle vrai ${journey.separationFromSun.toFixed(1).replace('.', ',')}° · visible`,
+			note: journey.inInframonde ? 'dans l’inframonde' : 'visible',
 			tone: journey.inInframonde ? 'under' : 'plain'
 		},
 		{
 			label: 'Longitude de Vénus',
 			value: formatZodiac(journey.venus.longitude),
-			note: `latitude écliptique ${formatSignedDegrees(journey.venus.latitude)}`
+			note: `latitude ${formatSignedDegrees(journey.venus.latitude)}`
 		},
 		{
 			label: 'Mouvement',
@@ -75,12 +73,15 @@
 		{
 			label: 'Lune aujourd’hui',
 			value: formatZodiac(journey.moon.longitude),
-			note: `à ${journey.moonSeparation.toFixed(1).replace('.', ',')}° de Vénus`
+			note: 'position actuelle'
 		},
 		{
-			label: 'Plus grande élongation à venir',
-			value: formatSignedDegrees(journey.greatestElongation.star === 'morning' ? -journey.greatestElongation.elongation : journey.greatestElongation.elongation),
-			note: `le ${formatMoment(journey.greatestElongation.at)}`
+			label: 'Inframonde',
+			value: journey.invisible ? formatDays(journey.invisible.days) : '—',
+			note: journey.invisible
+				? `du ${formatDate(journey.invisible.start)} au ${formatDate(journey.invisible.end)}`
+				: 'aucune traversée dans ce cycle',
+			tone: journey.inInframonde ? 'under' : 'plain'
 		}
 	]);
 

@@ -70,7 +70,7 @@
 					line:
 						`Conjonction exacte le ${formatDayAndTime(journey.activePassage.at)}, à ${formatZodiac(journey.activePassage.longitude)}. ` +
 						('garment' in journey.activePassage.gate
-							? `La porte ${journey.activePassage.index} est ouverte, Vénus abandonne ${journey.activePassage.gate.garment}.`
+							? `Le portail ${journey.activePassage.index} est ouvert, Vénus abandonne ${journey.activePassage.gate.garment}.`
 							: `Seuil ${journey.activePassage.index} franchi, ${journey.activePassage.gate.name.toLowerCase()} : ${journey.activePassage.gate.meaning}`),
 					tone: 'open'
 				}

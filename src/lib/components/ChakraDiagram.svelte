@@ -32,6 +32,8 @@
 	interface Centre {
 		key: string;
 		name: string;
+		chakra: string;
+		sanskrit: string;
 		index: number;
 		color: string;
 		x: number;
@@ -76,6 +78,8 @@
 			return {
 				key: gate.key,
 				name: gate.name,
+				chakra: gate.chakra,
+				sanskrit: gate.sanskrit,
 				index: gate.index,
 				color: gate.color,
 				x: spot.x * CHAKRA_IMAGE.width,
@@ -216,7 +220,9 @@
 					>
 						<span class="marker">{c.index}</span>
 						<span class="text">
-							<span class="name">{c.name}<em>{(c.portal as Gate).sanskrit}</em></span>
+							<span class="name"
+								>{c.name}<em>{(c.portal as Gate).chakra} · {(c.portal as Gate).sanskrit}</em></span
+							>
 							<span class="state">{
 								c.state === 'ouvert'
 									? 'portail ouvert'
@@ -244,7 +250,7 @@
 						<span class="text">
 							<span class="name"
 								>{seuil.gate.name}<em
-									>seuil 8 · {journey.star === 'morning' ? 'la descente s’achève' : 'la sortie de l’enfer'}</em
+									>portail 8 · {journey.star === 'morning' ? 'la descente s’achève' : 'la sortie de l’enfer'} · sans chakra</em
 								></span
 							>
 							<span class="state">{
@@ -268,9 +274,9 @@
 			<article class="detail" style="--gate:{t.color}">
 				<header>
 					<span class="eyebrow"
-						>Seuil 8 · {'meaning' in t && t.star === 'morning'
+						>Portail 8 · {'meaning' in t && t.star === 'morning'
 							? 'fin de la descente, la mort'
-							: 'sortie de l’enfer, la vie'}</span
+							: 'sortie de l’enfer, la vie'} · sans chakra</span
 					>
 					<h3>{t.name}</h3>
 				</header>
@@ -295,7 +301,11 @@
 			{@const g = focus.portal as Gate}
 			<article class="detail" style="--gate:{g.color}">
 				<header>
-					<span class="eyebrow">Porte {g.index} · {g.sanskrit}</span>
+					<span class="eyebrow"
+						>Portail {g.index} · {g.chakra} · {g.sanskrit}{g.nameSource === 'proposed'
+							? ' · nom proposé'
+							: ''}</span
+					>
 					<h3>{g.name}</h3>
 				</header>
 				<dl>

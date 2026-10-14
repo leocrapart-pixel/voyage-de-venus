@@ -22,3 +22,6 @@ coverage/
 # Python bytecode from the figure tool
 tools/__pycache__/
 *.pyc
+
+# Config de test jetable utilisée pendant le développement
+dbg.config.ts

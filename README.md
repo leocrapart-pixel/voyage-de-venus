@@ -2,7 +2,7 @@
 
 **En ligne : <https://voyage-de-venus.pages.dev>** · code : <https://github.com/leocrapart-pixel/voyage-de-venus>
 
-Une seule page : le cycle tel qu'il est à l'instant choisi.
+Deux pages : le cycle tel qu'il est à l'instant choisi, et le jeu de données 1952-2001.
 
 Une application web qui calcule le **cycle synodique de Vénus** dans le navigateur et le
 raconte comme une descente : celle d'Inanna, qui franchit sept portes et abandonne à
@@ -19,8 +19,9 @@ npm run dev        # http://localhost:5180
 ```bash
 npm run build      # SPA statique dans build/
 npm run preview    # http://localhost:4180
-npm test           # 81 tests : éphéméride, cycle, et comportement de la page
+npm test           # 86 tests : éphéméride, cycle, jeu de données, pages
 npm run check      # svelte-check / TypeScript
+npx vitest run --config tools/portails/audit.config.ts   # 7 tests d'audit du jeu
 ```
 
 ## Déploiement
@@ -100,18 +101,32 @@ Un seuil de 20 à 40° produirait bien les « 60 à 90 jours » que l'on lit par
 n'est plus de l'invisibilité : c'est une large zone de crépuscule. L'interface expose donc
 le seuil, affiche la durée qui en découle, et ne prétend pas qu'il s'agit d'une constante.
 
-### Les sept portails sont attribués, pas détectés
+### Les portails portent le nom de ce qu'ils gouvernent
 
-Un cycle contient **19 à 23 conjonctions Vénus-Lune**, à peu près également réparties entre
-les deux moitiés. Le nombre ne peut donc pas être « sept ». Ce qui est fixe, c'est l'ordre
-de la descente : la première conjonction d'une moitié ouvre la couronne, la suivante le
-front, et ainsi de suite jusqu'à la racine — puis la couronne à nouveau, puisqu'une moitié
-compte une dizaine de conjonctions pour sept chakras.
+Les sept portes s'appellent désormais **Portail de l'Autorité**, **de la Vision**, **de la
+Communication**, **de la Compassion**, **du Pouvoir Personnel**, **de la Créativité** et **de
+la Manifestation** — couronne, troisième œil, gorge, cœur, plexus solaire, sacré, racine.
 
-Puisqu'une moitié du cycle contient une dizaine de conjonctions pour sept chakras, le même
-chakra est franchi deux fois : la couronne est ouverte au premier rang, puis de nouveau au
-huitième. L'application affiche donc, pour chaque centre, **sa prochaine occurrence** — et
-non la première du cycle, qui serait une date de plusieurs mois dans le passé.
+Ces noms ne sont pas de moi. Six viennent du jeu de données 1952-2001, dont l'appariement
+portail-chakra est **sans ambiguïté** : sur les 34 entrées qui portent à la fois un portail et
+un chakra, aucun ne contredit un autre.
+
+| Portail | Centre | Occurrences |
+| --- | --- | --- |
+| Portail de l'Autorité | Couronne | 8 |
+| Portail du Pouvoir Personnel | Plexus solaire | 8 |
+| Portail de la Communication | Gorge | 6 |
+| Portail de la Manifestation | Racine | 6 |
+| Portail de la Compassion | Cœur | 4 |
+| Portail de la Créativité | Sacré | 2 |
+| *Portail de la Vision* | Troisième œil | **proposé** — le jeu ne le nomme pas |
+
+Le jeu nomme aussi un **Portail de la Vie Intentionnelle**, sans chakra, sur une seule entrée
+(1970-10-06). C'est cette même « vie intentionnelle » qui devient le seuil 8 du modèle.
+
+Le chakra reste sur chaque porte parce que c'est lui que la figure dessine et que la descente
+dépouille : **le nom dit ce que la porte gouverne, le chakra dit où elle passe**. L'interface
+affiche « Portail de l'Autorité » et, en second, « Couronne · Sahasrāra ».
 
 ### Sept portails, ou huit — le même nombre dans les deux moitiés
 
@@ -263,16 +278,39 @@ verdict** n'apparaît nulle part — ni « serré », ni « manqué », ni un co
 L'écart réel entre la Lune et Vénus n'est plus affiché non plus : c'est une mesure du
 moteur, pas une donnée de lecture.
 
+## Le jeu de données 1952-2001
+
+`src/lib/data/venus-journey.ts` contient les **62 entrées** du jeu, transcrites **telles
+quelles** : dates, degrés, phases, portails, chakras, descriptions. Rien n'est recalculé ni
+corrigé. La page `/portails` les affiche par année, avec un interrupteur qui ajoute en regard
+le degré que Vénus occupait réellement.
+
+Ce que l'audit mesure, et publie sans réécrire :
+
+| Constat | Mesure |
+| --- | --- |
+| Degrés annoncés | **6 entrées sur 61** portent le bon signe du zodiaque, **aucune** le bon degré. Le hasard en donnerait cinq. |
+| Phases contredisant leur étoile | 2 : **1965-08-22** et **1985-12-01** — Vénus y est du côté opposé au Soleil de ce que la phase annonce. |
+| Dates | Elles tiennent : la plupart tombent à quelques jours d'une conjonction inférieure, supérieure ou d'une station réelle. |
+| Appariement portail-chakra | **Sans ambiguïté**, et c'est de là que viennent les noms des sept portes. |
+
+`tools/portails/audit.test.ts` monte la garde dans les deux sens : il vérifie la transcription
+ligne par ligne (une seule valeur qui dérive et la suite casse) **et** il affirme le désaccord
+avec l'éphéméride — si quelqu'un « corrigeait » silencieusement les degrés, le test échouerait
+et le changement serait visible.
+
 ## Organisation
 
 ```
 src/lib/astro/ephemeris.ts    longitudes, séparations, bisection, repère tropical
 src/lib/astro/cycle.ts        cycle synodique, phases, rétrogradation, portails, chakras
 src/lib/symbolic/gates.ts     les sept portes, et la géométrie mesurée de la figure
+src/lib/data/venus-journey.ts    le jeu 1952-2001, transcrit tel quel
 src/lib/format.ts             dates, degrés et longitudes en français
 src/lib/components/           CycleRing, CycleTimeline, ChakraDiagram, JourneyReadings, TimeControls
 src/routes/+page.svelte       la page : état, débounce, mise en page
 tools/make-dark-figure.py     construit l'édition sombre de la figure
+tools/portails/audit.test.ts  confronte le jeu 1952-2001 à l'éphéméride
 ```
 
 Le calcul complet d'un voyage coûte **environ 100 ms** (recherche des conjonctions sur

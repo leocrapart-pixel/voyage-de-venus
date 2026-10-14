@@ -64,11 +64,6 @@
 	const nowPoint = $derived(point(R_TRACK, now));
 
 	/** The seven gates of each half, for the legend beneath the dial. */
-	const gateCount = $derived({
-		morning: journey.morning.passages.filter((p) => p.open).length,
-		evening: journey.evening.passages.filter((p) => p.open).length
-	});
-
 	const accessibleLabel = $derived(
 		`Cadran du cycle : ${journey.star === 'morning' ? 'étoile du matin' : 'étoile du soir'}, ` +
 			`jour ${Math.round(journey.dayOfCycle)} sur ${Math.round(journey.synodicDays)}`
@@ -196,30 +191,38 @@
 		<span class="legend"><i style="background:#ff6b78"></i> rétrogradation {journey.retrograde ? `(${journey.retrograde.days.toFixed(0)} j)` : ''}</span>
 		<span class="legend"><i style="background:#8b5cf6;opacity:0.6"></i> inframonde {journey.invisible ? `(${journey.invisible.days.toFixed(1)} j)` : ''}</span>
 		<span class="legend legend-gates"
-			>{gateCount.morning + gateCount.evening} portails ouverts sur {journey.conjunctions.length} conjonctions</span
+			>{journey.portalsPerHalf} portails par moitié · {journey.morning.portals.length +
+				journey.evening.portals.length} dans ce cycle</span
 		>
 	</figcaption>
 </figure>
 
 {#if onselect}
 	<ul class="passage-list">
-		{#each journey.conjunctions as passage (passage.at.getTime())}
-			<li>
-				<button
-					type="button"
-					class="passage"
-					class:open={passage.open}
-					class:selected={selected?.at.getTime() === passage.at.getTime()}
-					style="--gate:{passage.gate.color}"
-					onclick={() => onselect(passage)}
-				>
-					<span class="passage-gate">Porte {passage.index} · {passage.gate.name}</span>
-					<span class="passage-when num">{formatShortDate(passage.at)}</span>
-					<span class="passage-sep num" title={formatZodiac(passage.longitude)}
-						>{formatTime(passage.at)}</span
+		{#each [{ star: 'morning', label: 'Descente · étoile du matin', list: journey.morning.portals }, { star: 'evening', label: 'Ascension · étoile du soir', list: journey.evening.portals }] as half (half.star)}
+			{#if half.list.length > 0}
+				<li class="half">
+					<span class="eyebrow">{half.label}</span>
+				</li>
+			{/if}
+			{#each half.list as passage (passage.at.getTime())}
+				<li>
+					<button
+						type="button"
+						class="passage"
+						class:open={passage.open}
+						class:selected={selected?.at.getTime() === passage.at.getTime()}
+						style="--gate:{passage.gate.color}"
+						onclick={() => onselect(passage)}
 					>
-				</button>
-			</li>
+						<span class="passage-gate">{passage.index} · {passage.gate.name}</span>
+						<span class="passage-when num">{formatShortDate(passage.at)}</span>
+						<span class="passage-sep num" title={formatZodiac(passage.longitude)}
+							>{formatTime(passage.at)}</span
+						>
+					</button>
+				</li>
+			{/each}
 		{/each}
 	</ul>
 {/if}
@@ -271,6 +274,11 @@
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
 		gap: 0.35rem;
+	}
+
+	.half {
+		grid-column: 1 / -1;
+		padding-top: 0.3rem;
 	}
 
 	.passage {

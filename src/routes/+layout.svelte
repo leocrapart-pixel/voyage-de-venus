@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import '../app.css';
 	import favicon from '#lib/assets/favicon.svg';
 	import type { LayoutProps } from './$types';
@@ -17,25 +18,70 @@
 	<meta name="theme-color" content="#06060c" />
 </svelte:head>
 
-<header class="brand">
-	<a href="/">
+<nav>
+	<a class="brand" href="/">
 		<span class="star" aria-hidden="true">♀</span>
 		Le Voyage de Vénus
 	</a>
-</header>
+	<ul>
+		<li>
+			<a href="/" aria-current={page.url.pathname === '/' ? 'page' : undefined}>Le cycle</a>
+		</li>
+		<li>
+			<a href="/portails" aria-current={page.url.pathname === '/portails' ? 'page' : undefined}>
+				Portails 1952-2001
+			</a>
+		</li>
+	</ul>
+</nav>
 
 {@render children()}
 
 <style>
-	.brand {
+	nav {
 		position: relative;
 		z-index: 1;
 		max-width: 1240px;
 		margin: 0 auto;
 		padding: 1.1rem 1.2rem 0;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		flex-wrap: wrap;
 	}
 
-	.brand a {
+	ul {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		gap: 0.3rem;
+	}
+
+	li a {
+		display: inline-block;
+		padding: 0.35rem 0.7rem;
+		border-radius: 8px;
+		font-size: 0.8rem;
+		color: var(--ink-faint);
+		border: 1px solid transparent;
+	}
+
+	li a:hover {
+		color: var(--ink);
+		background: #ffffff08;
+		text-decoration: none;
+	}
+
+	li a[aria-current='page'] {
+		color: var(--venus);
+		border-color: #2c7f5e66;
+		background: #7ce0b014;
+		font-weight: 600;
+	}
+
+	.brand {
 		display: inline-flex;
 		align-items: center;
 		gap: 0.5rem;
@@ -45,7 +91,7 @@
 		letter-spacing: -0.01em;
 	}
 
-	.brand a:hover {
+	.brand:hover {
 		text-decoration: none;
 		color: var(--venus);
 	}

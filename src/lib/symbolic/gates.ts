@@ -40,12 +40,35 @@ export type ThresholdKey = 'mort-intentionnelle' | 'vie-intentionnelle';
 /** Anything a portal can open. */
 export type PortalKey = GateKey | ThresholdKey;
 
+/**
+ * A gate is named after what it governs, not after the centre of the body it passes
+ * through.
+ *
+ * Six of the seven names are **not invented**: they are the ones the 1952-2001 dataset uses,
+ * and its pairing of portal to chakra is unambiguous — « Portail de l'Autorité » always goes
+ * with the crown, « Portail de la Compassion » with the heart, and so on across 34 entries.
+ * The dataset never names a portal for the third eye or the throat under those names, so
+ * those two names are ours and are flagged as such by `nameSource`.
+ *
+ * The chakra stays on the object because it is what the figure draws and what the descent
+ * actually strips: the name says what the gate is about, the chakra says where it is. The
+ * chakra names are the dataset's own — « Troisième œil », « Sacré », « Racine » — so that
+ * the app and the data speak the same language.
+ */
 export interface Gate {
 	/** 1..7, the order of the descent — crown first, root last. */
 	index: number;
 	key: GateKey;
-	/** French name, as used by the interface. */
+	/** The portal's name: what it governs. */
 	name: string;
+	/** The chakra it passes through, as the descent names it. */
+	chakra: string;
+	/**
+	 * Whether the name comes from the supplied dataset or is a proposal of ours, because the
+	 * seven gates are not all witnessed there — the brow and the sacral have no portal name
+	 * in the 62 entries, only the chakra that carries them.
+	 */
+	nameSource: 'dataset' | 'proposed';
 	/** Sanskrit name of the chakra. */
 	sanskrit: string;
 	/** Traditional placement. */
@@ -64,7 +87,9 @@ export const GATES: readonly Gate[] = [
 	{
 		index: 1,
 		key: 'crown',
-		name: 'Couronne',
+		name: "Portail de l'Autorité",
+		chakra: 'Couronne',
+		nameSource: 'dataset',
 		sanskrit: 'Sahasrāra',
 		location: 'sommet du crâne',
 		garment: 'la couronne de la steppe',
@@ -75,7 +100,9 @@ export const GATES: readonly Gate[] = [
 	{
 		index: 2,
 		key: 'brow',
-		name: 'Front',
+		name: 'Portail de la Vision',
+		chakra: 'Troisième œil',
+		nameSource: 'proposed',
 		sanskrit: 'Ājñā',
 		location: 'entre les sourcils',
 		garment: 'le bâton de mesure et la corde',
@@ -86,7 +113,9 @@ export const GATES: readonly Gate[] = [
 	{
 		index: 3,
 		key: 'throat',
-		name: 'Gorge',
+		name: 'Portail de la Communication',
+		chakra: 'Gorge',
+		nameSource: 'dataset',
 		sanskrit: 'Viśuddha',
 		location: 'gorge',
 		garment: 'le collier de lapis-lazuli',
@@ -97,7 +126,9 @@ export const GATES: readonly Gate[] = [
 	{
 		index: 4,
 		key: 'heart',
-		name: 'Cœur',
+		name: 'Portail de la Compassion',
+		chakra: 'Cœur',
+		nameSource: 'dataset',
 		sanskrit: 'Anāhata',
 		location: 'centre de la poitrine',
 		garment: 'la cuirasse',
@@ -108,7 +139,9 @@ export const GATES: readonly Gate[] = [
 	{
 		index: 5,
 		key: 'solar',
-		name: 'Plexus solaire',
+		name: 'Portail du Pouvoir Personnel',
+		chakra: 'Plexus solaire',
+		nameSource: 'dataset',
 		sanskrit: 'Maṇipūra',
 		location: 'creux de l’estomac',
 		garment: "l'anneau d'or",
@@ -119,7 +152,9 @@ export const GATES: readonly Gate[] = [
 	{
 		index: 6,
 		key: 'sacral',
-		name: 'Ventre',
+		name: 'Portail de la Créativité',
+		chakra: 'Sacré',
+		nameSource: 'dataset',
 		sanskrit: 'Svādhiṣṭhāna',
 		location: 'bas-ventre',
 		garment: 'les pierres de son sein',
@@ -130,7 +165,9 @@ export const GATES: readonly Gate[] = [
 	{
 		index: 7,
 		key: 'root',
-		name: 'Racine',
+		name: 'Portail de la Manifestation',
+		chakra: 'Racine',
+		nameSource: 'dataset',
 		sanskrit: 'Mūlādhāra',
 		location: 'périnée',
 		garment: 'le vêtement royal',
@@ -150,6 +187,7 @@ export interface Threshold {
 	/** 8 — it always follows the seven chakras. */
 	index: 8;
 	key: ThresholdKey;
+	/** The threshold's name. Unlike the seven, these two carry no chakra at all. */
 	name: string;
 	/** What the threshold is, and what it is anchored to. */
 	meaning: string;

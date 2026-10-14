@@ -71,6 +71,11 @@ de la descente : la première conjonction d'une moitié ouvre la couronne, la su
 front, et ainsi de suite jusqu'à la racine — puis la couronne à nouveau, puisqu'une moitié
 compte une dizaine de conjonctions pour sept chakras.
 
+Puisqu'une moitié du cycle contient une dizaine de conjonctions pour sept chakras, le même
+chakra est franchi deux fois : la couronne est ouverte au premier rang, puis de nouveau au
+huitième. L'application affiche donc, pour chaque centre, **sa prochaine occurrence** — et
+non la première du cycle, qui serait une date de plusieurs mois dans le passé.
+
 L'orbe ne décide donc pas *si* une porte existe, mais *si elle compte*. La conjonction est
 zodiacale — même longitude écliptique — tandis que l'orbe est la séparation réelle dans le
 ciel, qui grandit avec la latitude écliptique de la Lune (jusqu'à 5,3°). Sur 242

@@ -493,46 +493,50 @@ describe('cost', () => {
 });
 
 describe('pairing a gate with its passage', () => {
-	it('returns the conjunction whose gate is open, even when the chakra is walked twice', () => {
-		// A half of the cycle holds about ten conjunctions against seven chakras, so the
-		// descent wraps: the brow is walked at rank 2 and again at rank 9. Searching for
-		// "the brow conjunction of the morning star" would answer with the rank-2 one from
-		// seven months earlier, which is not the passage the reader is being shown.
-		const date = at('2024-04-07T00:00:00Z');
-		const journey = computeJourney(date);
+	it('shows the next occurrence of a gate, not the first in the cycle', () => {
+		// The descent wraps inside one half: the brow is walked at rank 2 and again at rank
+		// 9. On a date after both, a search from the start of the cycle would answer with the
+		// rank-2 conjunction from seven months earlier, and the reader would be told their
+		// next brow gate happened in the past.
+		const journey = computeJourney(at('2024-04-07T00:00:00Z'));
+		const brows = journey.conjunctions
+			.filter((c) => c.gate.key === 'brow' && c.star === journey.star)
+			.sort((a, b) => a.at.getTime() - b.at.getTime());
+		expect(brows.length).toBeGreaterThan(1);
+
+		const paired = passageForGate(journey, 'brow')!;
+		const firstAfterNow = brows.find((c) => c.at.getTime() > journey.date.getTime())!;
+		expect(paired.at.getTime()).toBe(firstAfterNow.at.getTime());
+	});
+
+	it('returns the open passage itself when its gate is open', () => {
+		const journey = computeJourney(at('2024-04-07T00:00:00Z'));
 		const active = journey.activePassage;
 		expect(active).not.toBeNull();
 		if (!active) return;
-		expect(active.index).toBeGreaterThan(GATE_COUNT);
-
-		const sameBrow = journey.conjunctions.filter(
-			(c) => c.gate.key === active.gate.key && c.star === active.star
-		);
-		expect(sameBrow.length).toBeGreaterThan(1);
-
 		const paired = passageForGate(journey, active.gate.key);
 		expect(paired?.at.getTime()).toBe(active.at.getTime());
 	});
 
-	it('pairs every other gate with a conjunction of the same half of the cycle', () => {
-		const journey = computeJourney(at('2024-04-07T00:00:00Z'));
+	it('falls back to the last occurrence when nothing is left ahead', () => {
+		// Ten days before the closing inferior conjunction the evening half is over.
+		const journey = computeJourney(at('2025-03-13T00:00:00Z'));
 		for (const gate of GATES) {
+			if (journey.activePassage?.gate.key === gate.key) continue;
 			const paired = passageForGate(journey, gate.key);
 			expect(paired).not.toBeNull();
-			if (!paired) continue;
-			expect(paired.gate.key).toBe(gate.key);
-			if (journey.activePassage?.gate.key !== gate.key) {
-				expect(paired.star).toBe(journey.star);
-			}
+			expect(paired!.gate.key).toBe(gate.key);
 		}
 	});
 
-	it('never pairs a gate with a conjunction from the other half', () => {
-		const journey = computeJourney(at('2024-12-01T00:00:00Z'));
-		for (const gate of GATES) {
-			const paired = passageForGate(journey, gate.key);
-			if (paired && journey.activePassage?.gate.key !== gate.key) {
-				expect(paired.star).toBe(journey.star);
+	it('pairs every gate with a passage of the half of the cycle in progress', () => {
+		for (const iso of ['2024-04-07T00:00:00Z', '2024-12-01T00:00:00Z', '2023-10-01T00:00:00Z']) {
+			const journey = computeJourney(at(iso));
+			for (const gate of GATES) {
+				if (journey.activePassage?.gate.key === gate.key) continue;
+				const paired = passageForGate(journey, gate.key);
+				expect(paired).not.toBeNull();
+				expect(paired!.star).toBe(journey.star);
 			}
 		}
 	});

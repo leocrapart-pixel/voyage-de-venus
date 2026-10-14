@@ -187,28 +187,30 @@ export interface VenusJourney {
 /**
  * The passage that hands over a given gate on screen.
  *
- * The two halves of the cycle each hold a full descent, so the same chakra opens twice per
- * cycle and a gate has to be paired with a conjunction deliberately. The rule is:
+ * A half of the cycle holds about ten conjunctions against seven chakras, so the descent
+ * wraps and the same chakra opens more than once per half. Which one to show is therefore
+ * a real choice, and the answer is the *next* one:
  *
- * 1. the gate open at this moment, if the key matches — the reader is being shown that
- *    passage, so nothing else may be substituted for it;
- * 2. otherwise the conjunction of the reader's own half of the cycle, so a gate never
- *    reads back last half's date;
- * 3. failing both, any conjunction of the cycle at that gate.
+ * 1. the gate standing open right now, if the key matches — the reader is being shown that
+ *    passage, so nothing may be substituted for it;
+ * 2. otherwise the next conjunction at that gate, in the reader's own half of the cycle —
+ *    a gate is something to watch for, and pointing at the first occurrence in the cycle
+ *    answers with a date months in the past;
+ * 3. failing that, the last one that happened.
  */
 export function passageForGate(journey: VenusJourney, key: Gate['key']): GatePassage | null {
-	// The gate standing open is the answer by definition, and it cannot be found by
-	// searching: a half of the cycle holds about ten conjunctions against seven chakras,
-	// so the same chakra can be walked twice in one half (gates 1-7, then the crown again
-	// at 8), and a search would return the earlier conjunction rather than the one open now.
 	if (journey.activePassage?.gate.key === key) return journey.activePassage;
 
 	const star = journey.star;
-	return (
-		journey.conjunctions.find((p) => p.gate.key === key && p.star === star) ??
-		journey.conjunctions.find((p) => p.gate.key === key) ??
-		null
-	);
+	const atGate = journey.conjunctions.filter((p) => p.gate.key === key);
+	const own = atGate.filter((p) => p.star === star);
+	const pool = own.length > 0 ? own : atGate;
+	const upcoming = pool
+		.filter((p) => p.at.getTime() > journey.date.getTime())
+		.sort((a, b) => a.at.getTime() - b.at.getTime());
+	if (upcoming.length > 0) return upcoming[0];
+	const past = pool.sort((a, b) => b.at.getTime() - a.at.getTime());
+	return past[0] ?? null;
 }
 
 export interface JourneyOptions {

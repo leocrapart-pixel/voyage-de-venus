@@ -2,6 +2,8 @@
 
 **En ligne : <https://voyage-de-venus.pages.dev>** · code : <https://github.com/leocrapart-pixel/voyage-de-venus>
 
+Une seule page : le cycle tel qu'il est à l'instant choisi.
+
 Une application web qui calcule le **cycle synodique de Vénus** dans le navigateur et le
 raconte comme une descente : celle d'Inanna, qui franchit sept portes et abandonne à
 chacune un vêtement de sa royauté.
@@ -17,7 +19,7 @@ npm run dev        # http://localhost:5180
 ```bash
 npm run build      # SPA statique dans build/
 npm run preview    # http://localhost:4180
-npm test           # 89 tests : éphéméride, cycle, jeu de données, pages
+npm test           # 81 tests : éphéméride, cycle, et comportement de la page
 npm run check      # svelte-check / TypeScript
 ```
 
@@ -208,9 +210,6 @@ validité, et elle ne décide jamais si un portail a eu lieu.
   Cliquez un centre pour lire le vêtement abandonné, l'heure exacte de la conjonction et
   l'écart réel entre la Lune et Vénus.
 - **Le seul réglage** est le seuil d'invisibilité, qui règle la longueur de l'inframonde.
-- **La page `/portails`** présente le jeu de données 1952-2001 audité (voir plus bas) :
-  degré mesuré face au degré annoncé, phase réelle, visibilité, et les 62 descriptions
-  d'origine.
 
 Clavier : `←` / `→` pour un jour, `maj` + flèches pour une semaine, `n` pour maintenant.
 
@@ -257,34 +256,8 @@ navigateur peut casser : l'heure exacte de la conjonction est affichée, le dét
 conjonction de la bonne moitié du cycle, les sept anneaux tombent aux positions et rayons
 mesurés, régler le seuil d'invisibilité allonge bien la bande de l'inframonde, et **aucun
 verdict** n'apparaît nulle part — ni « serré », ni « manqué », ni un contrôle d'orbe.
-
-## Le jeu de données 1952-2001
-
-`src/lib/data/portails-venus.ts` contient 62 événements datés de 1952 à 2001, avec le
-portail et le chakra que l'auteur du jeu leur associe. Il a été **audité contre
-l'éphéméride** avant d'entrer dans le dépôt, et le résultat est sans ambiguïté.
-
-| Ce qui était annoncé | Ce que dit le ciel |
-| --- | --- |
-| Un degré du zodiaque par ligne | **6 lignes sur 61** portent le bon signe, **aucune** le bon degré. Le hasard en donnerait 5 : les degrés ne sont pas corrélés au ciel. |
-| Des phases cohérentes | 2 lignes se contredisent (1965-08-22 annoncée « Étoile du Matin » alors que Vénus est à +34° à l'est du Soleil ; 1985-12-01 l'inverse). |
-| Des dates d'événements | **Celles-ci tiennent.** Elles tombent pour la plupart à quelques jours d'une conjonction inférieure, supérieure ou d'une station réelle. |
-
-Le rapport complet, ligne par ligne, est dans `tools/portails/rapport-audit.md` ; il est
-régénérable par `npx vitest run --config tools/portails/audit.config.ts`.
-
-Le jeu committé sépare donc deux couches :
-
-- **la couche symbolique est intacte** — portail, chakra et description sont repris mot pour
-  mot, y compris les lacunes (`Portail de la Vie Intentionnelle` n'a pas de chakra dans le
-  jeu d'origine, et on ne lui en invente pas un) ;
-- **la couche astronomique est recalculée** — degré, longitude, élongation, visibilité,
-  sens de marche et cycle d'appartenance sont mesurés.
-
-Les valeurs d'origine restent lisibles dans `degreAnnonce` et `phaseAnnoncee`, pour que
-l'écart demeure vérifiable plutôt que d'être effacé. `src/lib/data/portails.test.ts` rejoue
-la vérification de l'autre côté : il confronte les valeurs committées à l'éphéméride, si
-bien que le générateur ne peut pas dériver sans que la suite échoue.
+L'écart réel entre la Lune et Vénus n'est plus affiché non plus : c'est une mesure du
+moteur, pas une donnée de lecture.
 
 ## Organisation
 
@@ -292,13 +265,10 @@ bien que le générateur ne peut pas dériver sans que la suite échoue.
 src/lib/astro/ephemeris.ts    longitudes, séparations, bisection, repère tropical
 src/lib/astro/cycle.ts        cycle synodique, phases, rétrogradation, portails, chakras
 src/lib/symbolic/gates.ts     les sept portes, et la géométrie mesurée de la figure
-src/lib/data/portails-venus.ts   le jeu 1952-2001, couche astronomique recalculée
-src/lib/data/portails-types.ts   le vocabulaire des phases et des chakras
 src/lib/format.ts             dates, degrés et longitudes en français
 src/lib/components/           CycleRing, CycleTimeline, ChakraDiagram, JourneyReadings, TimeControls
 src/routes/+page.svelte       la page : état, débounce, mise en page
 tools/make-dark-figure.py     construit l'édition sombre de la figure
-tools/portails/audit.ts       audite le jeu 1952-2001 et régénère le rapport + le jeu corrigé
 ```
 
 Le calcul complet d'un voyage coûte **environ 100 ms** (recherche des conjonctions sur

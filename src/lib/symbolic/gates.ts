@@ -1,88 +1,64 @@
 /**
- * The seven gates of the descent, and the eighth threshold.
+ * Les sept portails du voyage, et le huitième.
  *
- * In the Sumerian poem *Inanna's Descent to the Netherworld*, the queen of heaven passes
- * seven gates on her way down. At each one the gatekeeper strips a garment of her royal
- * dress, so she arrives before her sister Ereshkigal with nothing left — authority
- * dismantled, one piece at a time, from the crown downwards.
+ * ## Ce qu'est un portail
  *
- * The Voyage de Vénus maps that descent onto the seven chakras, in the same top-down
- * order. This file is the single source of the symbolism; the astronomy layer decides how
- * many portals a half of the cycle holds and hands each one a 1-based rank.
+ * Une conjonction Lune-Vénus — l'instant exact où les deux astres tiennent le même degré du
+ * zodiaque. La Lune en rencontre une vingtaine par cycle, mais toutes ne comptent pas :
  *
- * ## Why a half holds seven or eight, and no more
+ * 1. **Vénus doit être visible.** Sous `VISIBILITE_MINIMUM` degrés d'élongation au Soleil, elle
+ *    est noyée dans le crépuscule : la conjonction a lieu, mais dans l'inframonde, et elle
+ *    n'appartient à aucune phase. Elle n'ouvre donc aucun portail ;
+ * 2. **la conjonction doit être serrée.** Parmi les visibles, on garde les mieux serrées — c'est
+ *    l'orbe Lune-Vénus qui départage, et non l'appartenance ;
+ * 3. **jamais plus de huit.** Au-delà, la plus proche du Soleil est écartée : c'est la moins
+ *    lisible.
  *
- * A portal is a Moon-Venus conjunction — and the Moon meets Venus about once a month, so a
- * half-cycle of 290 days holds roughly ten of them. But a conjunction only counts as a
- * portal when it can be **seen**: below about 15° of solar elongation Venus is lost in the
- * twilight and the Moon is a daytime crescent, so the meeting happens out of sight.
+ * Mesuré sur les cycles 2018-2036, l'élongation seule donne **sept à neuf conjonctions visibles
+ * par phase**, ce qui laisse sept ou huit portails après l'écartement. C'est l'élongation qui
+ * fait le compte, et l'orbe qui choisit lesquelles.
  *
- * Applying that one criterion to 250 half-cycles between 1900 and 2100 yields **7 portals
- * 105 times and 8 portals 145 times — and nothing else**. The shape of the myth is not
- * imposed on the sky; it falls out of it, from a threshold that is observational rather
- * than symbolic.
+ * ## Les noms
  *
- * ## The eighth is a threshold, not a chakra
+ * Chaque portail porte le nom de ce qu'il gouverne, et garde le chakra qu'il traverse : le nom
+ * dit ce que la porte ouvre, le chakra dit où elle passe. Six des sept noms viennent du jeu de
+ * données 1952-2001, dont l'appariement portail-chakra est sans ambiguïté sur 34 entrées ; le jeu
+ * ne nomme pas le troisième œil, et « Portail de la Vision » est donc le seul nom proposé.
  *
- * When a half holds eight, the eighth is the **return**. Inanna comes back changed, and
- * what opens again is not rank but intention: **vie intentionnelle** at the exit from the
- * underworld, on the evening side. Its mirror is her death, **mort intentionnelle**, at
- * the heliacal setting where Venus vanishes — the end of the morning star, before the
- * inferior conjunction. Neither has a Sanskrit name, a place on the body or a garment,
- * because nothing is taken from her there: she dies, and she is given back.
+ * ## Les deux sens
+ *
+ * La descente va du sommet vers la racine — couronne d'abord, racine ensuite. L'ascension suit le
+ * chemin inverse : la même échelle parcourue à l'envers, de la racine vers la couronne.
  */
 
 export type GateKey = 'crown' | 'brow' | 'throat' | 'heart' | 'solar' | 'sacral' | 'root';
 
-/** Les trois jours que Vénus passe sous le Soleil, après la racine. */
-export type UnderworldKey = 'inframonde-jour-1' | 'inframonde-jour-2' | 'inframonde-jour-3';
-
-/** Les deux seuils qui encadrent la traversée. */
-export type ThresholdKey = 'mort-intentionnelle' | 'vie-intentionnelle';
+/** Le huitième portail, celui qui n'est pas un chakra. */
+export type AwarenessKey = 'conscience';
 
 /** Tout ce qu'un portail peut ouvrir. */
-export type PortalKey = GateKey | ThresholdKey | UnderworldKey;
+export type PortalKey = GateKey | AwarenessKey;
 
-/**
- * A gate is named after what it governs, not after the centre of the body it passes
- * through.
- *
- * Six of the seven names are **not invented**: they are the ones the 1952-2001 dataset uses,
- * and its pairing of portal to chakra is unambiguous — « Portail de l'Autorité » always goes
- * with the crown, « Portail de la Compassion » with the heart, and so on across 34 entries.
- * The dataset never names a portal for the third eye or the throat under those names, so
- * those two names are ours and are flagged as such by `nameSource`.
- *
- * The chakra stays on the object because it is what the figure draws and what the descent
- * actually strips: the name says what the gate is about, the chakra says where it is. The
- * chakra names are the dataset's own — « Troisième œil », « Sacré », « Racine » — so that
- * the app and the data speak the same language.
- */
 export interface Gate {
-	/** 1..7, the order of the descent — crown first, root last. */
+	/** 1..7, l'ordre de la descente — couronne d'abord, racine ensuite. */
 	index: number;
 	key: GateKey;
-	/** The portal's name: what it governs. */
+	/** Ce que la porte gouverne. */
 	name: string;
-	/** The chakra it passes through, as the descent names it. */
+	/** Le chakra qu'elle traverse. */
 	chakra: string;
-	/**
-	 * Whether the name comes from the supplied dataset or is a proposal of ours, because the
-	 * seven gates are not all witnessed there — the brow and the sacral have no portal name
-	 * in the 62 entries, only the chakra that carries them.
-	 */
+	/** D'où vient le nom : du jeu de données, ou de nous. */
 	nameSource: 'dataset' | 'proposed';
-	/** Sanskrit name of the chakra. */
+	/** Nom sanskrit du chakra. */
 	sanskrit: string;
-	/** Traditional placement. */
+	/** Place traditionnelle. */
 	location: string;
-	/** The garment Inanna surrenders at this gate. */
+	/** Le vêtement qu'Inanna abandonne à cette porte. */
 	garment: string;
-	/** What the surrender asks for, in the app's own words. */
+	/** Ce que l'abandon demande. */
 	release: string;
-	/** Colour of the centre, used for glow and timeline. */
+	/** Couleur du centre, pour la lueur et la frise. */
 	color: string;
-	/** A dimmer companion colour for gradients. */
 	deep: string;
 }
 
@@ -183,241 +159,115 @@ export const GATES: readonly Gate[] = [
 export const GATE_COUNT = GATES.length;
 
 /**
- * Les trois jours de l'inframonde.
+ * Le huitième portail : **Portail de la Conscience** — l'intention devenue consciente.
  *
- * Après la racine, Vénus est au plus près du Soleil : c'est la traversée. Trois conjonctions
- * Vénus-Lune s'y succèdent, une par lunaison, et rien ne les distingue l'une de l'autre —
- * d'où un seul nom pour les trois et une seule couleur, grise : celle d'un temps où Vénus
- * n'est plus visible.
- *
- * Un jour de l'inframonde n'a pas la forme d'un chakra : ni nom sanskrit, ni place sur le
- * corps, ni vêtement — rien ne lui est retiré.
+ * Il n'a pas de chakra, parce qu'il n'est pas un centre du corps : c'est le franchissement qui
+ * achève les sept. Il n'apparaît que dans les phases qui comptent huit conjonctions visibles, et
+ * prend alors le huitième rang, après les sept chakras, dans les deux sens du voyage.
  */
-export interface UnderworldDay {
-	/** 8, 9 puis 10 — les trois rangs qui suivent les sept chakras. */
+export interface Awareness {
+	/** 8 — toujours après les sept chakras. */
 	index: number;
-	key: UnderworldKey;
-	/** « Inframonde jour 1 », « jour 2 », « jour 3 ». */
+	key: AwarenessKey;
 	name: string;
-	/** Ce qui se passe pendant cette lunaison. */
 	meaning: string;
-	/** Gris : le temps de l'invisible. */
 	color: string;
 	deep: string;
 }
 
-export const UNDERWORLD: Readonly<Record<UnderworldKey, UnderworldDay>> = {
-	'inframonde-jour-1': {
-		index: 8,
-		key: 'inframonde-jour-1',
-		name: 'Inframonde jour 1',
-		meaning:
-			'La racine franchie, Vénus entre dans le Soleil. Inanna meurt : ce qu’elle a lâché aux sept portes la précède dans le Grand En-Bas.',
-		color: '#6f7480',
-		deep: '#2b2f38'
-	},
-	'inframonde-jour-2': {
-		index: 9,
-		key: 'inframonde-jour-2',
-		name: 'Inframonde jour 2',
-		meaning:
-			'La traversée continue sans lumière. Inanna est jugée, mise à mort et suspendue : rien n’en paraît au-dehors.',
-		color: '#7b808c',
-		deep: '#31353f'
-	},
-	'inframonde-jour-3': {
-		index: 10,
-		key: 'inframonde-jour-3',
-		name: 'Inframonde jour 3',
-		meaning:
-			'La dernière lunaison de l’invisible. Vénus est au plus près du Soleil avant de reparaître : Inanna remonte, dépouillée.',
-		color: '#878c99',
-		deep: '#373b46'
-	}
+export const AWARENESS: Awareness = {
+	index: 8,
+	key: 'conscience',
+	name: 'Portail de la Conscience',
+	meaning:
+		'Le huitième portail : non plus un centre du corps, mais l’intention qui les traverse, devenue consciente. Inanna remonte en sachant ce qu’elle a lâché.',
+	color: '#d9d2f0',
+	deep: '#443c5e'
 } as const;
 
-/** Les trois jours, dans l'ordre. */
-export const UNDERWORLD_DAYS: readonly UnderworldDay[] = [
-	UNDERWORLD['inframonde-jour-1'],
-	UNDERWORLD['inframonde-jour-2'],
-	UNDERWORLD['inframonde-jour-3']
-];
-
-/**
- * Un seuil : la mort en entrant dans l'inframonde, la vie en en sortant.
- *
- * Il est gardé tel quel, et il n'est pas un quatrième jour : c'est le franchissement lui-même,
- * à l'instant où Vénus disparaît dans le Soleil ou en reparaît. Il n'a donc ni chakra ni
- * couleur de chakra.
- */
-export interface Threshold {
-	/** 11 — après les sept chakras et les trois jours. */
-	index: number;
-	key: ThresholdKey;
-	name: string;
-	meaning: string;
-	/** Lequel des deux seuils. */
-	star: 'morning' | 'evening';
-	/** L'événement du ciel auquel il s'ancre. */
-	anchor: string;
-	color: string;
-	deep: string;
+/** Ce portail est-il le huitième ? */
+export function isAwarenessKey(key: string): key is AwarenessKey {
+	return key === 'conscience';
 }
 
-export const THRESHOLDS: Readonly<Record<ThresholdKey, Threshold>> = {
-	'mort-intentionnelle': {
-		index: 11,
-		key: 'mort-intentionnelle',
-		name: 'Mort intentionnelle',
-		meaning:
-			'La descente s’achève : Vénus disparaît dans le Soleil. Inanna meurt, et ce qu’elle a lâché aux sept portes la précède.',
-		star: 'morning',
-		anchor: 'coucher héliaque de Vénus, quelques jours avant la conjonction inférieure',
-		color: '#5b6270',
-		deep: '#252932'
-	},
-	'vie-intentionnelle': {
-		index: 11,
-		key: 'vie-intentionnelle',
-		name: 'Vie intentionnelle',
-		meaning:
-			'La sortie de l’enfer : Vénus reparaît en étoile du soir. Inanna remonte, non plus couronnée mais intentionnelle.',
-		star: 'evening',
-		anchor: 'lever héliaque de Vénus, quelques jours après la conjonction inférieure',
-		color: '#aab0bd',
-		deep: '#3a3f4a'
-	}
-} as const;
+/** Élongation solaire minimale pour que Vénus soit tenue pour visible. */
+export const VISIBILITE_MINIMUM = 10;
+
+/** Le nombre visé de portails par phase, et son plafond. */
+export const PORTAILS_MINIMUM = 7;
+export const PORTAILS_MAXIMUM = 8;
 
 /**
- * Le sommet d'une moitié : sept chakras, trois jours d'inframonde, un seuil.
+ * L'ordre des chakras dans une phase.
  *
- * Onze portails, dans cet ordre à la descente. À l'ascension les sept chakras se lisent à
- * l'envers — de la racine vers la couronne — et la traversée ouvre la moitié plutôt que de
- * la fermer, puisque c'est par elle que Vénus reparaît.
- */
-export const PORTALS_PER_HALF = GATE_COUNT + UNDERWORLD_DAYS.length + 1;
-
-/**
- * Le seuil de vie et de mort n'existe que dans les cycles assez fournis.
- *
- * Le cycle entier compte ses conjonctions Vénus-Lune, et ce total décide de la forme :
- *
- * - **17 conjonctions ou moins** : sept chakras par moitié, trois jours d'inframonde, et *pas*
- *   de portail de vie ni de mort — 7 + 3 + 7 ;
- * - **plus de 17** (le cas le plus fréquent) : huit chakras par moitié, puis les jours qui
- *   restent, et le seuil s'ajoute — 8 + 2 + 8 avec la mort et la vie.
- *
- * Le seuil n'est pas une conjonction Vénus-Lune : Vénus seule entre dans le Soleil ou en
- * ressort, au coucher puis au lever héliaques. Il s'ajoute donc aux conjonctions au lieu d'en
- * consommer une, et c'est ce qui fait tomber le compte.
- */
-export const CYCLE_TOTAL_THRESHOLD = 17;
-
-export interface CycleShape {
-	/** Le total de conjonctions Vénus-Lune du cycle, tel que mesuré. */
-	total: number;
-	/** Nombre de chakras par moitié : sept, ou huit. */
-	chakrasParMoitie: number;
-	/** Le cycle porte-t-il le portail de vie et de mort ? */
-	avecSeuil: boolean;
-}
-
-export function cycleShape(total: number): CycleShape {
-	const avecSeuil = total > CYCLE_TOTAL_THRESHOLD;
-	return {
-		total,
-		chakrasParMoitie: avecSeuil ? GATE_COUNT + 1 : GATE_COUNT,
-		avecSeuil
-	};
-}
-
-/** Le rang du seuil : le onzième, après les sept chakras et les trois jours. */
-export const THRESHOLD_RANK = PORTALS_PER_HALF;
-
-/**
  * La descente va du sommet vers la racine, l'ascension suit le chemin inverse.
- *
- * C'est la même échelle parcourue dans les deux sens : Inanna se dépouille en descendant
- * (couronne d'abord, racine ensuite) et remonte en reprenant les mêmes centres, de la racine
- * vers la couronne. La seconde moitié du cycle — l'étoile du soir — se lit donc dans l'ordre
- * croissant des chakras.
  */
 export const GATES_DESCENDING: readonly Gate[] = GATES;
 export const GATES_ASCENDING: readonly Gate[] = [...GATES].reverse();
 
+/** L'ordre des chakras pour une phase, en fonction du sens du voyage. */
+export function gatesForStar(star: 'morning' | 'evening'): readonly Gate[] {
+	return star === 'morning' ? GATES_DESCENDING : GATES_ASCENDING;
+}
+
 /**
- * L'ordre des chakras pour une moitié du cycle, sur `count` portails.
+ * Les portails d'une phase, dans l'ordre de lecture.
  *
- * Sept dans un cycle court : la descente va de la couronne à la racine, l'ascension de la racine
- * à la couronne. Huit dans un cycle fourni : le huitième reprend le premier centre du parcours —
- * la couronne à la descente, la racine à l'ascension —, parce que le cycle repasse par son point
- * de départ avant la traversée.
+ * Les sept chakras d'abord, puis le huitième s'il y en a un : la conscience qui les traverse.
  */
-export function chakraSequence(star: 'morning' | 'evening', count: number): readonly Gate[] {
-	const base = star === 'morning' ? GATES_DESCENDING : GATES_ASCENDING;
-	const out: Gate[] = [];
-	for (let i = 0; i < count; i++) out.push(base[i % base.length]);
+export function portalSequence(
+	star: 'morning' | 'evening',
+	count: number
+): readonly (Gate | Awareness)[] {
+	const base = gatesForStar(star);
+	const out: (Gate | Awareness)[] = base.slice(0, Math.min(count, GATE_COUNT));
+	if (count > GATE_COUNT) out.push(AWARENESS);
 	return out;
 }
 
-/** The gate for a 1-based rank of the descent, 1 to 7. */
-export function gateForIndex(index: number): Gate {
-	const i = ((index - 1) % GATE_COUNT + GATE_COUNT) % GATE_COUNT;
-	return GATES[i];
+/** Le portail pour un rang de 1 à 8, dans une phase donnée. */
+export function portalForRank(rank: number, star: 'morning' | 'evening'): Gate | Awareness {
+	const sequence = portalSequence(star, Math.max(rank, GATE_COUNT));
+	return sequence[Math.min(rank, sequence.length) - 1] ?? GATES[0];
 }
 
-/** Ce portail est-il un jour de l'inframonde ? */
-export function isUnderworldKey(key: string): key is UnderworldKey {
-	return key.startsWith('inframonde-jour-');
-}
-
-/** Le jour de l'inframonde pour un rang, ou `undefined` au-delà des trois jours. */
-export function underworldDayForIndex(index: number): UnderworldDay | undefined {
-	return UNDERWORLD_DAYS[index - 1];
+/** Le portail d'un chakra, par sa clé. */
+export function gateByKey(key: GateKey): Gate {
+	const found = GATES.find((g) => g.key === key);
+	if (!found) throw new Error(`Unknown gate: ${key}`);
+	return found;
 }
 
 /**
- * Positions and sizes of the seven centres inside the chakra figure.
+ * Positions et tailles des sept centres dans la figure.
  *
- * These are *measured from the image*, not eyeballed. Each chakra is painted in its own
- * hue, so the PNG can be segmented by colour: the script took the strongly coloured
- * pixels of each band, split them into connected components, and kept the component that
- * straddles the figure's vertical axis — which is the chakra symbol itself, rather than
- * the outline of the body drawn over the same rows.
+ * Elles sont **mesurées dans l'image**, pas estimées. Chaque chakra est peint dans sa propre
+ * teinte, donc le PNG se segmente par couleur : les pixels fortement colorés de chaque bande sont
+ * découpés en composantes connexes, et l'on garde celle qui chevauche l'axe vertical de la figure
+ * — c'est le symbole du chakra, et non le contour du corps dessiné sur les mêmes lignes.
  *
- * The result is that all seven centres sit on one axis (x from 297.5 to 299.0 of 600)
- * and that their radii differ a lot: the solar-plexus and sacral symbols are 85 px
- * across, the brow only 46 px. A single ring size would either swallow the small ones or
- * float inside the large ones, so each centre carries its own measured radius.
- *
- * Stored as fractions of the image box so the overlay scales with it.
+ * Les sept centres tombent ainsi sur un même axe (x de 297,5 à 299,0 sur 600) et leurs rayons
+ * varient du simple au double : 43 px pour le plexus solaire, 24 px pour le troisième œil. Un
+ * anneau de taille unique masquerait les petits ou flotterait dans les grands, d'où un rayon par
+ * centre.
  */
 export interface ChakraSpot {
 	key: GateKey;
-	/** Fraction of image width, 0..1 from the left. */
+	/** Fraction de la largeur de l'image, 0..1 depuis la gauche. */
 	x: number;
-	/** Fraction of image height, 0..1 from the top. */
+	/** Fraction de la hauteur de l'image, 0..1 depuis le haut. */
 	y: number;
-	/** Measured radius of the symbol, as a fraction of image width. */
+	/** Rayon mesuré du symbole, en fraction de la largeur. */
 	r: number;
 }
 
 export const CHAKRA_IMAGE = {
-	/** Intrinsic size, used for the aspect ratio box. */
 	width: 600,
 	height: 823,
-	/** The image is not ours; credit it wherever it appears. */
 	source: 'https://jothishi.com/wp-content/uploads/2019/05/The-seven-chakras.png',
 	attribution: 'jothishi.com'
 } as const;
 
-/**
- * x, y and r in source pixels, straight from the segmentation.
- *
- * The root symbol is small and drawn in several pieces, so its entry is the extent of all
- * its red components together rather than the largest single one.
- */
 const MEASURED: ReadonlyArray<{ key: GateKey; x: number; y: number; r: number }> = [
 	{ key: 'crown', x: 297.5, y: 54.5, r: 31 },
 	{ key: 'brow', x: 298.0, y: 177.5, r: 24 },

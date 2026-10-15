@@ -11,7 +11,7 @@ import {
 	type Conjunction
 } from './cycle';
 import { daysBetween, shiftDays } from './ephemeris';
-import { GATES, isUnderworldKey, cycleShape } from '../symbolic/gates';
+import { GATES, isAwarenessKey } from '../symbolic/gates';
 
 const at = (iso: string) => new Date(iso);
 /** Hours between two instants. */
@@ -375,60 +375,62 @@ describe('Moon-Venus conjunctions', () => {
 	});
 });
 
-describe('gate assignment', () => {
-	// Le cycle 2023-08-13 → 2025-03-23 : conjonction supérieure le 2024-06-04.
+describe('la sélection des portails', () => {
+	// Le cycle 2023-08-13 → 2025-03-23.
 	const journey = computeJourney(at('2024-03-01T00:00:00Z'));
 	const chakraKeys = new Set<string>(GATES.map((g) => g.key));
 
-	it('applique la règle du cycle : sept ou huit chakras, et le seuil au-delà de dix-sept', () => {
-		// Le total de conjonctions du cycle décide de sa forme.
-		const total = journey.conjunctions.length;
-		const shape = cycleShape(total);
-		expect(shape.avecSeuil).toBe(total > 17);
-		// Mesuré sur 124 cycles de 1900 à 2100 : 19 ou 20 conjonctions, donc le seuil est toujours là.
-		expect(shape.avecSeuil).toBe(true);
-		expect(shape.chakrasParMoitie).toBe(GATES.length + 1);
-
+	it('donne sept ou huit portails par phase, jamais plus', () => {
 		for (const phase of [journey.morning, journey.evening]) {
-			const portals = phase.portals;
-			expect(portals.filter((p) => chakraKeys.has(p.gate.key))).toHaveLength(shape.chakrasParMoitie);
-			expect(
-				portals.filter((p) => p.gate.key === 'mort-intentionnelle' || p.gate.key === 'vie-intentionnelle')
-			).toHaveLength(1);
-			// Les jours prennent ce qui reste, entre deux et trois.
-			const days = portals.filter((p) => isUnderworldKey(p.gate.key)).length;
-			expect(days).toBeGreaterThanOrEqual(1);
-			expect(days).toBeLessThanOrEqual(3);
+			expect(phase.portals.length).toBeGreaterThanOrEqual(1);
+			expect(phase.portals.length).toBeLessThanOrEqual(8);
+			// Le rang suit la date : 1 à n.
+			const ranks = phase.portals.map((p) => p.index);
+			expect(new Set(ranks).size).toBe(ranks.length);
+			expect(Math.min(...ranks)).toBe(1);
+			expect(Math.max(...ranks)).toBe(ranks.length);
 		}
 	});
 
-	it('descend les chakras puis remonte à l’envers', () => {
-		const chakraNames = (phase: (typeof journey)['morning']) =>
+	it('écarte les conjonctions de l’inframonde : Vénus invisible, aucun portail', () => {
+		for (const phase of [journey.morning, journey.evening]) {
+			for (const p of phase.passages) {
+				expect(p.observable).toBe(Math.abs(p.elongation) > journey.portalVisibility);
+				// Une conjonction non observable n'est jamais un portail.
+				if (!p.observable) expect(p.portal).toBe(false);
+				// Et un portail est toujours observable.
+				if (p.portal) expect(p.observable).toBe(true);
+			}
+			// La phase expose ses conjonctions écartées.
+			expect(phase.inframonde.every((p) => !p.observable)).toBe(true);
+		}
+	});
+
+	it('retient les conjonctions les mieux serrées, et jamais plus de huit', () => {
+		for (const phase of [journey.morning, journey.evening]) {
+			const visibles = phase.passages.filter((p) => p.observable);
+			const kept = new Set(phase.portals.map((p) => p.at.getTime()));
+			// Quand il y a plus de huit conjonctions visibles, les portails sont les huit mieux
+			// serrées : toute écartée est moins serrée que la plus large des retenues.
+			if (visibles.length > 8) {
+				const widest = Math.max(...phase.portals.map((p) => p.separation));
+				for (const p of visibles.filter((v) => !kept.has(v.at.getTime()))) {
+					expect(p.separation).toBeGreaterThanOrEqual(widest);
+				}
+			} else {
+				expect(phase.portals.length).toBe(visibles.length);
+			}
+		}
+	});
+
+	it('descend les sept chakras puis remonte à l’envers', () => {
+		const keys = (phase: typeof journey.morning) =>
 			phase.portals
 				.filter((p) => chakraKeys.has(p.gate.key))
 				.sort((a, b) => a.index - b.index)
-				.map((p) => (p.gate as (typeof GATES)[number]).key);
-
-		// La descente part de la couronne ; l'ascension part de la racine et suit le chemin inverse.
-		expect(chakraNames(journey.morning).slice(0, GATES.length)).toEqual(GATES.map((g) => g.key));
-		expect(chakraNames(journey.evening).slice(0, GATES.length)).toEqual(
-			[...GATES].reverse().map((g) => g.key)
-		);
-		// L'ordre croissant demandé, sur les sept premiers de l'ascension : manifestation d'abord,
-		// puis créativité, etc.
-		const ascent = journey.evening.portals
-			.filter((p) => chakraKeys.has(p.gate.key))
-			.sort((a, b) => a.index - b.index)
-			.slice(0, GATES.length);
-		expect(ascent.map((p) => (p.gate as (typeof GATES)[number]).name)).toEqual([
-			'Portail de la Manifestation',
-			'Portail de la Créativité',
-			'Portail du Pouvoir Personnel',
-			'Portail de la Compassion',
-			'Portail de la Communication',
-			'Portail de la Vision',
-			"Portail de l'Autorité"
-		]);
+				.map((p) => p.gate.key);
+		expect(keys(journey.morning).slice(0, GATES.length)).toEqual(GATES.map((g) => g.key));
+		expect(keys(journey.evening).slice(0, GATES.length)).toEqual([...GATES].reverse().map((g) => g.key));
 	});
 
 	it('nomme chaque portail d’après ce qu’il gouverne, et donne son chakra', () => {
@@ -449,58 +451,43 @@ describe('gate assignment', () => {
 		}
 	});
 
-	it('place les jours de l’inframonde à la suite des chakras, en gris, sans chakra', () => {
+	it('place le huitième au rang 8, hors du corps, et seulement s’il y a huit visibles', () => {
 		for (const phase of [journey.morning, journey.evening]) {
-			const days = phase.portals
-				.filter((p) => isUnderworldKey(p.gate.key))
-				.sort((a, b) => a.index - b.index);
-			expect(days.length).toBeGreaterThanOrEqual(1);
-			// Numérotés dans l'ordre, en commençant par le premier.
-			expect(days.map((d) => d.gate.key)).toEqual(
-				['inframonde-jour-1', 'inframonde-jour-2', 'inframonde-jour-3'].slice(0, days.length)
-			);
-			// Leurs rangs se suivent. À la descente ils viennent après les chakras ; à l'ascension le
-			// seuil ouvre la moitié, donc ils sont décalés d'un cran.
-			const ranks = days.map((d) => d.index);
-			expect(ranks).toEqual(ranks.map((_, i) => ranks[0] + i));
-			for (const d of days) {
-				// Gris, et sans chakra : ils ne passent par aucun centre du corps.
-				expect(d.gate).not.toHaveProperty('chakra');
-				expect(d.gate).not.toHaveProperty('sanskrit');
-				expect((d.gate as { color: string }).color).toMatch(/^#[0-9a-f]{6}$/i);
+			const conscience = phase.portals.find((p) => isAwarenessKey(p.gate.key));
+			const visibles = phase.passages.filter((p) => p.observable).length;
+			if (visibles >= 8) {
+				expect(conscience, 'huit visibles ou plus sans portail de la conscience').toBeDefined();
+				expect(conscience!.index).toBe(8);
+				expect(conscience!.gate.name).toBe('Portail de la Conscience');
+				// Il n'est pas un centre du corps.
+				expect(conscience!.gate).not.toHaveProperty('chakra');
+				expect(conscience!.gate).not.toHaveProperty('sanskrit');
+			} else {
+				// Moins de huit visibles : les sept chakras, et pas de huitième.
+				expect(conscience).toBeUndefined();
+				expect(phase.portals.length).toBe(visibles);
 			}
 		}
 	});
 
-	it('garde le 8e tel quel, et l’ancre sur le franchissement héliaque', () => {
-		const mort = journey.morning.portals.find((p) => p.gate.key === 'mort-intentionnelle')!;
-		const vie = journey.evening.portals.find((p) => p.gate.key === 'vie-intentionnelle')!;
-		expect(mort.gate.name).toBe('Mort intentionnelle');
-		expect(vie.gate.name).toBe('Vie intentionnelle');
-
-		// Ce ne sont pas des conjonctions Vénus-Lune : Vénus seule entre dans le Soleil et en
-		// ressort, donc l'écart au Soleil y est nul par construction du seuil.
-		for (const seuil of [mort, vie]) {
-			expect(seuil.gate).not.toHaveProperty('chakra');
-			expect(seuil.gate).not.toHaveProperty('garment');
-			expect(Math.abs(seuil.elongation)).toBeLessThan(7);
-		}
-		// Et ils encadrent la conjonction inférieure qui ferme le cycle.
-		expect(mort.at.getTime()).toBeLessThan(journey.end.at.getTime());
-		expect(vie.at.getTime()).toBeGreaterThan(journey.end.at.getTime());
-		// La mort ferme la descente, la vie ouvre l'ascension : le rang est cet ordre de lecture.
-		expect(mort.index).toBe(GATES.length + 4);
-		expect(vie.index).toBe(1);
-	});
-
-	it('donne à chaque portail un rang unique et continu dans sa moitié', () => {
-		for (const phase of [journey.morning, journey.evening]) {
-			const ranks = phase.portals.map((p) => p.index);
-			expect(new Set(ranks).size).toBe(ranks.length);
-			expect(Math.min(...ranks)).toBe(1);
-			expect(Math.max(...ranks)).toBe(ranks.length);
-			// Le rang est l'ordre de lecture : les deux se confondent.
-			for (const p of phase.portals) expect(p.readOrder).toBe(p.index);
+	it('vérifie la règle sur huit cycles', () => {
+		for (const iso of [
+			'2020-06-03T12:00:00Z',
+			'2022-01-09T12:00:00Z',
+			'2023-08-13T12:00:00Z',
+			'2025-03-23T12:00:00Z',
+			'2026-10-24T12:00:00Z',
+			'2028-06-01T12:00:00Z',
+			'2030-01-06T12:00:00Z',
+			'2033-03-20T12:00:00Z'
+		]) {
+			const j = computeJourney(at(iso));
+			for (const phase of [j.morning, j.evening]) {
+				expect(phase.portals.length).toBeLessThanOrEqual(8);
+				expect(phase.portals.length).toBe(
+					Math.min(phase.passages.filter((p) => p.observable).length, 8)
+				);
+			}
 		}
 	});
 });
@@ -594,8 +581,6 @@ describe('cost', () => {
 
 describe('pairing a gate with its passage', () => {
 	it('donne le portail ouvert quand son rang est celui du moment', () => {
-		// À l'instant exact du portail, et non à minuit : la fenêtre est d'une demi-journée, et
-		// la conjonction du 7 avril 2024 tombe à 16:21.
 		const instant = computeJourney(at('2024-04-07T00:00:00Z')).conjunctions.find(
 			(p) => p.portal && p.at.toISOString().startsWith('2024-04-07')
 		)!.at;
@@ -607,7 +592,7 @@ describe('pairing a gate with its passage', () => {
 		expect(paired?.at.getTime()).toBe(active.at.getTime());
 	});
 
-	it('apparie chaque portail avec une conjonction de la moitié en cours', () => {
+	it('apparie chaque portail avec une conjonction de la phase en cours', () => {
 		for (const iso of ['2024-04-07T00:00:00Z', '2024-12-01T00:00:00Z', '2023-10-01T00:00:00Z']) {
 			const journey = computeJourney(at(iso));
 			const phase = journey.star === 'morning' ? journey.morning : journey.evening;

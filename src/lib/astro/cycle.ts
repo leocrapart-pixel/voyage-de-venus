@@ -12,166 +12,71 @@ import {
 } from './ephemeris';
 import {
 	GATES,
-	THRESHOLDS,
-	UNDERWORLD_DAYS,
-	chakraSequence,
-	cycleShape,
-	isUnderworldKey,
+	PORTAILS_MAXIMUM,
+	VISIBILITE_MINIMUM,
+	portalSequence,
+	type Awareness,
 	type Gate,
-	type PortalKey,
-	type Threshold,
-	type UnderworldDay
+	type PortalKey
 } from '../symbolic/gates';
 
-/**
- * L'instant où Vénus cesse d'être visible, ou le redevient.
- *
- * C'est le franchissement du seuil de visibilité par l'élongation : en s'éloignant de la
- * conjonction dans le sens donné, le premier instant où |élongation| atteint `arcusVisionis`.
- * Ce n'est pas une conjonction Vénus-Lune : c'est Vénus seule qui entre dans le Soleil ou en
- * sort, et c'est là que se posent les deux seuils du cycle.
- */
-function heliacalCrossing(from: Date, direction: 1 | -1, arcusVisionis: number): Date {
-	for (let days = 0.01; days < 70; days += 0.01) {
-		const probe = shiftDays(from, direction * days);
-		if (Math.abs(venusElongation(probe)) >= arcusVisionis) return probe;
-	}
-	return from;
+/** Élongation solaire à partir de laquelle une conjonction devient un portail. */
+export const PORTAL_VISIBILITY = VISIBILITE_MINIMUM;
+
+/** La phase que donne une élongation : négative à l'ouest du Soleil, donc étoile du matin. */
+function starOf(elongation: number): Star {
+	return elongation < 0 ? 'morning' : 'evening';
 }
 
 /**
- * The Venus synodic cycle, measured rather than assumed.
+ * Le portail qui ouvre une clé donnée, dans la phase en cours.
  *
- * A "Voyage de Vénus" runs from one inferior conjunction to the next — the moment
- * Venus passes between the Earth and the Sun, retrograde and invisible, and the hinge
- * where it stops being the evening star and becomes the morning star. That span is
- * usually quoted as 584 days; it is in fact anywhere from 580 to 588 days, because the
- * orbit is eccentric and inclined, and five of those cycles only average the classical
- * 583.92 (they come to 2 919.68 days, an 8-year resonance accurate to about two days).
- *
- * Nothing here hard-codes 584. Every date is searched in the ephemeris, so the app
- * stays honest for whichever cycle it is asked about.
- *
- * Vocabulary used throughout:
- *
- * - **conjonction inférieure** — Venus between the Earth and the Sun, retrograde,
- *   invisible. It opens the cycle.
- * - **conjonction supérieure** — Venus behind the Sun, direct, invisible. It splits
- *   the cycle into its two halves.
- * - **étoile du matin / du soir** — Venus west of the Sun (rising before it) or east of
- *   it (setting after it), decided by the sign of the ecliptic elongation.
- * - **inframonde** — the days around the inferior conjunction during which Venus is too
- *   close to the Sun to be seen. Its length comes from `arcusVisionis`, the minimum
- *   elongation at which the planet becomes visible again. That threshold is an
- *   observational parameter, not a constant of nature, so it is configurable and its
- *   default is stated rather than smuggled in.
- * - **portail** — a Moon-Venus conjunction that can actually be *seen*: the instant the
- *   Moon and Venus share an ecliptic longitude, provided the pair stands at least
- *   `PORTAL_VISIBILITY` from the Sun. The Moon meets Venus about once a month, so a half
- *   of the cycle holds roughly ten conjunctions — but only seven or eight of them clear
- *   that threshold, and that is what makes a half a descent rather than a list. The
- *   instant itself is never approximate and is never qualified as close or missed. Two
- *   figures describe it and they are not the same thing:
- *
- *   - the **instant** itself, to the minute — that is the gate;
- *   - the **closest approach**, the minimum great-circle separation over the hours around
- *     it, which is what the eye would see. It differs from the instant's separation by a
- *     few hundredths of a degree, since the Moon's ecliptic latitude is what separates the
- *     two bodies, and that latitude barely moves in an hour. Measured over a full cycle
- *     the peak of the closest approach lands within 1.1 h of the conjunction, so the app
- *     reports both times whenever they differ by more than half an hour.
+ * Les deux phases portent les mêmes sept chakras — la descente du sommet vers la racine,
+ * l'ascension de la racine vers le sommet —, donc la clé seule ne suffit pas : c'est la phase du
+ * moment qui décide lequel des deux on regarde.
  */
+export function passageForGate(journey: VenusJourney, key: PortalKey): GatePassage | null {
+	if (journey.activePassage?.gate.key === key) return journey.activePassage;
+	const phase = journey.star === 'morning' ? journey.morning : journey.evening;
+	return phase.portals.find((p) => p.gate.key === key) ?? null;
+}
 
-export type ConjunctionKind = 'inferior' | 'superior';
+/** La phase de Vénus : étoile du matin, ou étoile du soir. */
 export type Star = 'morning' | 'evening';
+export type ConjunctionKind = 'inferior' | 'superior';
 
 /**
- * Minimum solar elongation at which Venus is taken to be visible.
+ * Élongation solaire au-dessous de laquelle Vénus est tenue pour invisible.
  *
- * The classical *arcus visionis*: the sky must be dark enough at the horizon for the
- * planet to emerge from the twilight, which for Venus happens around 5° of elongation.
- * It is an observational parameter — it depends on atmospheric clarity, altitude and
- * the observer's eyesight — which is why the interface lets it be changed and reports
- * the resulting length of the inframonde.
+ * Sert au paramètre `arcusVisionis` du voyage : c'est lui qui fixe la longueur de l'inframonde
+ * affichée. La sélection des portails, elle, suit `VISIBILITE_MINIMUM`.
  */
 export const DEFAULT_ARCUS_VISIONIS = 5;
 
 /**
- * Solar elongation, in degrees, at which a Moon-Venus conjunction becomes a candidate portal.
+ * Demi-largeur, en heures, de la fenêtre pendant laquelle un portail est « en cours ».
  *
- * Below this the pair is lost in the twilight and the meeting happens out of sight, so it
- * is recorded but opens nothing. The value is not tuned: it is the classical limit of
- * naked-eye visibility for a Venus-Moon pair.
- *
- * On its own this threshold leaves the two halves of a cycle disagreeing — 125 cycles
- * between 1900 and 2100 give 7-7 only 5 times, 8-8 25 times, and 7-8 or 8-7 the other 95.
- * The two halves are therefore reconciled explicitly; see `PORTALS_PER_HALF`.
- */
-export const PORTAL_VISIBILITY = 15;
-
-/**
- * How many portals a cycle holds in each half: seven, or eight when both halves can carry
- * eight.
- *
- * A descent and its mirror should have the same number of gates, and the sky does not
- * oblige: the two halves of a cycle hold a different number of observable conjunctions in
- * 76 % of cycles, because the Moon's latitude and Venus's eccentricity do not repeat
- * between one half and the next. So the count is settled between them, at the smaller of
- * the two: **7-7 or 8-8, never 7-8**. What the fuller half cannot place falls outside the
- * descent, in the inframonde.
- *
- * The conjunctions that survive are the **first** of each half, counted from the conjunction
- * that opens it; when a half has one too many, the one dropped is its last. Two reasons:
- *
- * - the crown must be the first gate of a half. Keeping by any other measure dropped the
- *   crown on the evening side and started the ascent at the brow, which is not a descent;
- * - the last conjunction of a half is the one nearest the next conjunction — the one whose
- *   meeting already happens in the twilight of the passage into the underworld. It is the
- *   natural marginal case.
- */
-export function portalsPerHalf(morningCount: number, eveningCount: number): number {
-	return Math.min(morningCount, eveningCount);
-}
-
-/**
- * Half-width, in hours, of the window around an exact conjunction during which the
- * interface calls that gate "in progress".
- *
- * The gate itself is an instant and is always reported to the minute; this window decides
- * nothing about when the conjunction happens, only how long it stays on screen as the
- * current one. Half a day either side: wider than the hours the Moon spends near Venus,
- * far narrower than the 29.5-day lunation, so a gate is never announced on a day that is
- * not its own.
+ * Le portail lui-même est un instant, donné à la minute ; cette fenêtre ne décide que du portail
+ * que l'interface annonce comme celui du moment. Une demi-journée de part et d'autre.
  */
 export const GATE_WINDOW_HOURS = 12;
 
 /**
- * Whether a gate counts as in progress at a given moment.
- *
- * The comparison needs a tolerance, and it is not cosmetic: conjunctions are located by
- * bisection with a half-second stopping rule, so the same conjunction found from two
- * slightly different search grids can land up to half a second apart. Without the slack, a
- * gate would flicker shut for a reader who reloads a page on its exact instant.
+ * Une conjonction Vénus-Soleil — le repère qui borne et coupe le cycle.
  */
-export function isGateOpen(passageAt: Date, moment: Date, windowHours = GATE_WINDOW_HOURS): boolean {
-	const toleranceHours = 1 / 3600;
-	return Math.abs(daysBetween(passageAt, moment)) <= windowHours / 24 + toleranceHours;
-}
-
 export interface Conjunction {
 	kind: ConjunctionKind;
 	at: Date;
-	/** Signed elongation at conjunction: negative = morning star, positive = evening. */
+	/** Élongation signée : négative à l'ouest du Soleil, positive à l'est. */
 	elongation: number;
-	/** Venus's ecliptic latitude — how far off the ecliptic it passes the Sun. */
+	/** Latitude écliptique de Vénus : de combien elle passe à côté. */
 	venusLatitude: number;
-	/** True angular separation from the Sun's centre, degrees. */
+	/** Séparation angulaire vraie au Soleil, en degrés. */
 	separationFromSun: number;
 }
 
 export interface Station {
 	at: Date;
-	/** `retrograde` is where Venus turns backwards, `direct` where it recovers. */
 	direction: 'retrograde' | 'direct';
 	elongation: number;
 	longitude: number;
@@ -181,7 +86,7 @@ export interface RetrogradeWindow {
 	retrogradeStation: Station;
 	directStation: Station;
 	days: number;
-	/** Longitude of Venus at the midpoint — the degree it returns to. */
+	/** Longitude de Vénus au milieu de la rétrogradation. */
 	longitude: number;
 }
 
@@ -194,86 +99,46 @@ export interface InvisibilityWindow {
 }
 
 /**
- * One passage: the exact instant the Moon and Venus share an ecliptic longitude.
+ * Une conjonction Lune-Vénus : l'instant exact où les deux astres tiennent le même degré du
+ * zodiaque.
  *
- * There is no quality field, because there is nothing to qualify. A conjunction is the
- * instant two bodies hold the same zodiacal degree — it happens or it does not, and its
- * time is fixed to the second. What varies from month to month is only how far apart the
- * two bodies are *in the sky* at that instant, which is a measurement to report rather
- * than a verdict to pass: the Moon can meet Venus at the same degree while passing 5°
- * above or below it, and that distance is the Moon's own ecliptic latitude showing.
+ * Aucun champ de qualité : une conjonction a lieu ou n'a pas lieu, et son heure est fixée. Ce qui
+ * varie d'un mois à l'autre est la distance réelle entre les deux astres à cet instant — une
+ * mesure à publier, pas un verdict.
  */
 export interface MoonVenusConjunction {
-	/** The instant of the conjunction, in ecliptic longitude. This is the gate. */
 	at: Date;
-	/** The longitude both bodies hold at that instant — the gate's degree. */
 	longitude: number;
-	/** Venus's longitude, identical to `longitude` by construction. */
 	venusLongitude: number;
-	/**
-	 * The Moon's own longitude. Equal to `longitude` only up to the tolerance of the
-	 * bisection (half a second of time, so under 0.002° of the Moon's motion), which is
-	 * why it is measured rather than assumed.
-	 */
 	moonLongitude: number;
-	/** True angular separation at the instant of conjunction, degrees. */
+	/** Séparation angulaire vraie à l'instant de la conjonction, en degrés. C'est l'orbe. */
 	separation: number;
-	/** Smallest separation over the hours either side, degrees. */
 	closestSeparation: number;
-	/** When that closest approach occurs. Usually within an hour of `at`. */
 	closestAt: Date;
-	/** Moon's ecliptic latitude at the conjunction, degrees — what the separation is made of. */
 	moonLatitude: number;
-	/** Venus's ecliptic latitude at the same instant. */
 	venusLatitude: number;
-	/** Elongation from the Sun at the conjunction. */
 	elongation: number;
 	star: Star;
-	/** True for a waxing Moon (evening-star sky), false for a waning one. */
-	waxing: boolean;
 	/**
-	 * La moitié du cycle à laquelle ce portail appartient : la descente avant la conjonction
-	 * supérieure, l'ascension après.
-	 *
-	 * À ne pas confondre avec `star`, qui est le signe de l'élongation — une **mesure**. Les
-	 * jours de l'inframonde qui terminent la descente tombent après la conjonction inférieure,
-	 * donc du côté de l'étoile du soir, mais ils appartiennent bien à la descente qu'ils
-	 * achèvent.
+	 * La phase à laquelle la conjonction appartient, qui est aussi `star` : c'est le signe de
+	 * l'élongation qui décide.
 	 */
 	half: Star;
-	/**
-	 * Ce que ce portail ouvre : un chakra, un jour de l'inframonde, ou le seuil de la
-	 * traversée.
-	 */
-	gate: Gate | UnderworldDay | Threshold;
-	/**
-	 * Rang dans sa moitié du cycle : 1 à 7 les chakras, 8 à 10 les trois jours de
-	 * l'inframonde, 11 le seuil.
-	 */
+	waxing: boolean;
+	/** Ce que ce portail ouvre : un chakra, ou le portail de la conscience. */
+	gate: Gate | Awareness;
+	/** Rang dans sa phase : 1 à 7 les chakras, 8 le portail de la conscience. */
 	index: number;
-	/**
-	 * Position dans la lecture de la moitié, qui n'est pas celle des dates.
-	 *
-	 * Le seuil est daté à la charnière du cycle : la mort tombe après la conjonction
-	 * inférieure, donc après les jours de la descente qu'elle achève, et la vie tombe avant
-	 * eux. Mais le mythe les place ailleurs dans le récit — la mort ferme la descente, la vie
-	 * ouvre l'ascension —, et c'est cet ordre-là que l'interface affiche.
-	 */
 	readOrder: number;
-	/**
-	 * True when this conjunction clears `PORTAL_VISIBILITY`. A candidate, not yet a portal:
-	 * the two halves are then reconciled at the smaller count, so an observable conjunction
-	 * can still fall outside the descent.
-	 */
+	/** Vénus est-elle visible à cet instant — élongation au-delà de `VISIBILITE_MINIMUM` ? */
 	observable: boolean;
-	/** True when this conjunction is one of the portals of the cycle. */
+	/** Cette conjonction est-elle retenue comme portail de sa phase ? */
 	portal: boolean;
-	/** Days since the phase began (the inferior or superior conjunction). */
 	dayOfPhase: number;
 }
 
 export interface GatePassage extends MoonVenusConjunction {
-	/** True within half a day of the exact instant — see `GATE_WINDOW_HOURS`. */
+	/** Vrai dans la demi-journée qui entoure l'instant exact. */
 	open: boolean;
 }
 
@@ -282,13 +147,12 @@ export interface Phase {
 	start: Date;
 	end: Date;
 	days: number;
-	/** Conjunctions of this half, chronological — observable ones and not. */
+	/** Les conjonctions de la phase, chronologiques. */
 	passages: GatePassage[];
-	/**
-	 * The portals of this half, in order: seven of them, or eight when both halves of the
-	 * cycle can carry eight — in which case the eighth is the threshold.
-	 */
+	/** Les portails retenus, dans l'ordre de lecture : les sept chakras, puis la conscience. */
 	portals: GatePassage[];
+	/** Les conjonctions écartées parce que Vénus était invisible. */
+	inframonde: GatePassage[];
 }
 
 export interface GreatestElongation {
@@ -297,103 +161,38 @@ export interface GreatestElongation {
 	star: Star;
 }
 
-export interface VenusJourney {
-	date: Date;
-	arcusVisionis: number;
-	/** Half-width, in hours, of the window during which a gate counts as in progress. */
-	gateWindowHours: number;
-	/** Solar elongation, in degrees, at which a conjunction becomes a portal candidate. */
-	portalVisibility: number;
-	/** How many portals each half of this cycle holds: seven, or eight. */
-	portalsPerHalf: number;
-	/** Inferior conjunction that opened the cycle containing `date`. */
-	start: Conjunction;
-	/** Inferior conjunction that closes it. */
-	end: Conjunction;
-	/** Superior conjunction that splits the cycle in two. */
-	mid: Conjunction;
-	/** Actual length of this cycle, days. The published mean is 583.92. */
-	synodicDays: number;
-	dayOfCycle: number;
-	daysRemaining: number;
-	/** Fraction of the cycle completed, 0..1 — drives the progress ring. */
-	progress: number;
-	star: Star;
-	/** Signed ecliptic elongation right now: negative morning, positive evening. */
-	elongation: number;
-	/** True angular separation from the Sun right now, degrees. */
-	separationFromSun: number;
-	venus: EclipticPosition;
-	moon: EclipticPosition;
-	/** Moon-Venus separation right now, degrees. */
-	moonSeparation: number;
-	greatestElongation: GreatestElongation;
-	retrograde: RetrogradeWindow | null;
-	invisible: InvisibilityWindow | null;
-	/** True while Venus is inside the inframonde. */
-	inInframonde: boolean;
-	morning: Phase;
-	evening: Phase;
-	/** Every Moon-Venus conjunction of this cycle, chronological. */
-	conjunctions: GatePassage[];
-	/** The passage whose exact instant is closest to the reader's moment, if one is open. */
-	activePassage: GatePassage | null;
-	/** The next passage to come, whether or not its gate has opened. */
-	nextPassage: GatePassage | null;
-}
-
-/**
- * The passage that hands over a given gate on screen.
- *
- * A half of the cycle holds about ten conjunctions against seven chakras, so the descent
- * wraps and the same chakra opens more than once per half. Which one to show is therefore
- * a real choice, and the answer is the *next* one:
- *
- * 1. the gate standing open right now, if the key matches — the reader is being shown that
- *    passage, so nothing may be substituted for it;
- * 2. otherwise the next conjunction at that gate, in the reader's own half of the cycle —
- *    a gate is something to watch for, and pointing at the first occurrence in the cycle
- *    answers with a date months in the past;
- * 3. failing that, the last one that happened.
- */
-export function passageForGate(journey: VenusJourney, key: PortalKey): GatePassage | null {
-	if (journey.activePassage?.gate.key === key) return journey.activePassage;
-
-	const star = journey.star;
-	const atGate = journey.conjunctions.filter((p) => p.gate.key === key);
-	const own = atGate.filter((p) => p.star === star);
-	const pool = own.length > 0 ? own : atGate;
-	const upcoming = pool
-		.filter((p) => p.at.getTime() > journey.date.getTime())
-		.sort((a, b) => a.at.getTime() - b.at.getTime());
-	if (upcoming.length > 0) return upcoming[0];
-	const past = pool.sort((a, b) => b.at.getTime() - a.at.getTime());
-	return past[0] ?? null;
-}
-
 export interface JourneyOptions {
-	/** Minimum solar elongation, in degrees, at which Venus counts as visible. */
+	/** Élongation solaire minimale, en degrés, à laquelle Vénus compte comme visible. */
 	arcusVisionis?: number;
-	/** Half-width, in hours, of the window around an exact conjunction. */
+	/** Demi-largeur, en heures, de la fenêtre autour d'un portail. */
 	gateWindowHours?: number;
 }
 
-function starOf(elongation: number): Star {
-	return elongation < 0 ? 'morning' : 'evening';
-}
-
-/** Signed ecliptic elongation of Venus: negative when west of the Sun (morning star). */
+/** Élongation écliptique signée de Vénus : négative à l'ouest du Soleil. */
 export function venusElongation(date: Date): number {
 	return signedDelta(position(Body.Venus, date).longitude, position(Body.Sun, date).longitude);
 }
 
 /**
- * The closest approach of the Moon and Venus around a conjunction.
+ * Le portail est-il ouvert à cet instant ?
  *
- * The conjunction is exact in longitude; the separation in the sky reaches its minimum
- * somewhere in the hours around it, because the Moon's ecliptic latitude is not zero and
- * Venus's is not either. Sampling the separation coarsely and then trisecting the bracket
- * finds that minimum to well under a minute.
+ * La comparaison a une tolérance, et ce n'est pas cosmétique : les conjonctions sont trouvées par
+ * bissection avec une règle d'arrêt d'une demi-seconde, donc la même conjonction cherchée depuis
+ * deux grilles différentes peut tomber à une demi-seconde près. Sans cette marge, un portail
+ * clignoterait fermé pour un lecteur qui recharge la page sur son instant exact.
+ */
+export function isGateOpen(passageAt: Date, moment: Date, windowHours = GATE_WINDOW_HOURS): boolean {
+	const toleranceHours = 1 / 3600;
+	return Math.abs(daysBetween(passageAt, moment)) <= windowHours / 24 + toleranceHours;
+}
+
+/**
+ * Le passage au plus près de la Lune et de Vénus autour d'une conjonction.
+ *
+ * La conjonction est exacte en longitude ; la séparation dans le ciel atteint son minimum dans
+ * les heures qui l'entourent, parce que la latitude écliptique de la Lune n'est pas nulle et
+ * celle de Vénus non plus. Un échantillonnage grossier puis une trisection trouvent ce minimum à
+ * la minute près.
  */
 function closestApproach(around: Date, hours = 20): { at: Date; separation: number } {
 	const separationAt = (t: number) =>
@@ -680,134 +479,96 @@ function organise(
 	mid: Conjunction,
 	end: Conjunction,
 	now: Date,
-	windowHours: number,
-	arcusVisionis: number
+	windowHours: number
 ): GatePassage[] {
 	const inCycle = raw
 		.filter((c) => c.at.getTime() >= start.at.getTime() && c.at.getTime() <= end.at.getTime())
 		.sort((a, b) => a.at.getTime() - b.at.getTime())
-		// La moitié se lit dans la **date** — avant ou après la conjonction supérieure —, pas dans
-		// le signe de l'élongation : les jours de l'inframonde qui terminent la descente tombent
-		// après la conjonction inférieure, donc du côté de l'étoile du soir, et appartiennent
-		// pourtant à la descente qu'ils achèvent.
-		.map((c) => ({ ...c, half: (c.at.getTime() < mid.at.getTime() ? 'morning' : 'evening') as Star }));
+		// La phase se lit dans le signe de l'élongation : Vénus à l'ouest du Soleil se lève avant
+		// lui, c'est l'étoile du matin — la descente. À l'est, c'est l'étoile du soir.
+		.map((c) => ({
+			...c,
+			star: (c.elongation < 0 ? 'morning' : 'evening') as Star,
+			half: (c.elongation < 0 ? 'morning' : 'evening') as Star
+		}));
 
-	const at = (c: MoonVenusConjunction) => c.at.getTime();
 	const rank = new Map<number, number>();
-	const portal = new Map<number, Gate | UnderworldDay | Threshold>();
-
-	// La forme du cycle se décide sur son total de conjonctions : sept chakras par moitié et pas
-	// de seuil jusqu'à dix-sept, huit chakras et le seuil au-delà.
-	const shape = cycleShape(inCycle.length);
+	const portal = new Map<number, Gate | Awareness>();
 
 	for (const star of ['morning', 'evening'] as const) {
-		const half = inCycle.filter((c) => c.half === star);
-		if (half.length === 0) continue;
+		const phase = inCycle.filter((c) => c.star === star);
 
-		// 1. Les chakras : les conjonctions du début de la moitié, dans l'ordre du calendrier —
-		//    l'ordre du mythe s'applique à l'affichage, pas ici. Le nombre est celui de la forme
-		//    du cycle : sept, ou huit.
-		const ordered = half.slice().sort((a, b) => a.at.getTime() - b.at.getTime());
-		const chakras = ordered.slice(0, Math.min(shape.chakrasParMoitie, ordered.length));
+		// 1. Écartées d'emblée : les conjonctions de l'inframonde, où Vénus est invisible. Elles
+		//    n'appartiennent à aucune phase et n'ouvrent donc aucun portail.
+		const visibles = phase.filter((c) => Math.abs(c.elongation) > VISIBILITE_MINIMUM);
 
-		// 2. Les jours de l'inframonde : tout ce qui reste dans la moitié. Ils sont donc deux
-		//    quand la moitié en compte dix et que les chakras en prennent huit, ce qui est le cas
-		//    ordinaire.
-		const days = ordered.slice(chakras.length);
+		// 2. On garde les plus serrées — c'est l'orbe qui départage — et jamais plus de huit.
+		//    Au-delà de huit, la plus proche du Soleil est écartée.
+		const retenues = visibles
+			.slice()
+			.sort((a, b) => a.separation - b.separation)
+			.slice(0, PORTAILS_MAXIMUM);
 
-		const sequence = star === 'morning' ? [...chakras, ...days] : [...days, ...chakras];
-		const chakraNames = chakraSequence(star, chakras.length);
-		sequence.forEach((c, i) => {
-			const isChakra = chakras.some((k) => at(k) === at(c));
-			rank.set(at(c), i + 1);
-			portal.set(
-				at(c),
-				isChakra
-					? chakraNames[chakras.findIndex((k) => at(k) === at(c))]
-					: UNDERWORLD_DAYS[i < chakras.length ? i : i - chakras.length] ?? UNDERWORLD_DAYS[0]
-			);
+		// 3. Numérotation par date croissante, puis un chakra par rang dans l'ordre traditionnel.
+		const ordered = retenues.sort((a, b) => a.at.getTime() - b.at.getTime());
+		const sequence = portalSequence(star, ordered.length);
+		ordered.forEach((c, i) => {
+			rank.set(c.at.getTime(), i + 1);
+			portal.set(c.at.getTime(), sequence[i]);
 		});
 	}
 
-	// 3. Le seuil, s'il existe dans ce cycle : la mort au coucher héliaque, la vie au lever, tous
-	//    deux autour de la conjonction inférieure qui ferme le cycle. Ce ne sont pas des
-	//    conjonctions Vénus-Lune, d'où un portail ajouté en plus.
-	const thresholds: Array<{ at: Date; gate: Threshold }> = shape.avecSeuil
-		? [
-				{ at: heliacalCrossing(end.at, -1, arcusVisionis), gate: THRESHOLDS['mort-intentionnelle'] },
-				{ at: heliacalCrossing(end.at, 1, arcusVisionis), gate: THRESHOLDS['vie-intentionnelle'] }
-			]
-		: [];
-
-	const passages: GatePassage[] = inCycle.map((c) => {
-		const assigned = rank.get(at(c));
+	return inCycle.map((c) => {
+		const assigned = rank.get(c.at.getTime());
 		return {
 			...c,
-			observable: Math.abs(c.elongation) >= PORTAL_VISIBILITY,
+			observable: Math.abs(c.elongation) > VISIBILITE_MINIMUM,
 			portal: assigned !== undefined,
 			index: assigned ?? 0,
 			readOrder: assigned ?? 0,
-			gate: portal.get(at(c)) ?? GATES[0],
-			dayOfPhase: Math.abs(daysBetween(c.half === 'morning' ? start.at : mid.at, c.at)),
+			gate: portal.get(c.at.getTime()) ?? GATES[0],
+			dayOfPhase: Math.abs(daysBetween(c.star === 'morning' ? start.at : mid.at, c.at)),
 			open: assigned !== undefined && isGateOpen(c.at, now, windowHours)
 		};
 	});
-
-	for (const t of thresholds) {
-		const seenAt = t.at;
-		const star: Star = t.gate.key === 'mort-intentionnelle' ? 'morning' : 'evening';
-		const venus = position(Body.Venus, seenAt);
-		const sun = position(Body.Sun, seenAt);
-		passages.push({
-			at: seenAt,
-			longitude: venus.longitude,
-			venusLongitude: venus.longitude,
-			moonLongitude: venus.longitude,
-			separation: 0,
-			closestSeparation: 0,
-			closestAt: seenAt,
-			moonLatitude: 0,
-			venusLatitude: venus.latitude,
-			elongation: signedDelta(venus.longitude, sun.longitude),
-			star,
-			half: star,
-			waxing: star === 'evening',
-			observable: false,
-			portal: true,
-			index: 0,
-			readOrder: 0,
-			gate: t.gate,
-			dayOfPhase: Math.abs(daysBetween(star === 'morning' ? start.at : mid.at, seenAt)),
-			open: isGateOpen(seenAt, now, windowHours)
-		});
-	}
-
-	// Le rang **est** l'ordre de lecture, et c'est celui du mythe, pas celui des dates : les sept
-	// chakras, puis les trois jours, puis le seuil. À l'ascension le seuil ouvre, donc il précède
-	// tout le reste — le mythe remonte à l'envers du calendrier.
-	for (const star of ['morning', 'evening'] as const) {
-		const half = passages.filter((p) => p.portal && p.half === star);
-		const kind = (p: GatePassage) => {
-			if (p.gate.key === 'mort-intentionnelle' || p.gate.key === 'vie-intentionnelle') return 3;
-			return isUnderworldKey(p.gate.key) ? 2 : 1;
-		};
-		const order = (n: number) => (star === 'morning' ? n : 4 - n);
-		half.sort(
-			(a, b) => order(kind(a)) - order(kind(b)) || a.at.getTime() - b.at.getTime()
-		);
-		half.forEach((p, i) => {
-			p.index = i + 1;
-			p.readOrder = i + 1;
-		});
-	}
-
-	return passages.sort((a, b) => a.at.getTime() - b.at.getTime());
 }
 
 /**
  * Assemble the complete journey for a moment: the enclosing cycle, its two halves, the
  * retrograde, the inframonde, and every gate passage with its chakra.
  */
+export interface VenusJourney {
+	date: Date;
+	arcusVisionis: number;
+	gateWindowHours: number;
+	/** Élongation solaire à partir de laquelle une conjonction est un portail. */
+	portalVisibility: number;
+	start: Conjunction;
+	end: Conjunction;
+	mid: Conjunction;
+	synodicDays: number;
+	dayOfCycle: number;
+	daysRemaining: number;
+	progress: number;
+	star: Star;
+	elongation: number;
+	separationFromSun: number;
+	venus: EclipticPosition;
+	moon: EclipticPosition;
+	moonSeparation: number;
+	greatestElongation: GreatestElongation;
+	retrograde: RetrogradeWindow | null;
+	invisible: InvisibilityWindow | null;
+	inInframonde: boolean;
+	morning: Phase;
+	evening: Phase;
+	conjunctions: GatePassage[];
+	/** Nombre de portails par phase : sept, ou huit. */
+	portalsParPhase: number;
+	activePassage: GatePassage | null;
+	nextPassage: GatePassage | null;
+}
+
 export function computeJourney(date: Date, options: JourneyOptions = {}): VenusJourney {
 	const arcusVisionis = options.arcusVisionis ?? DEFAULT_ARCUS_VISIONIS;
 	const gateWindowHours = options.gateWindowHours ?? GATE_WINDOW_HOURS;
@@ -826,12 +587,11 @@ export function computeJourney(date: Date, options: JourneyOptions = {}): VenusJ
 		mid,
 		end,
 		date,
-		gateWindowHours,
-		arcusVisionis
+		gateWindowHours
 	);
 
 	/** The number of portals each half holds — the same for both, by construction. */
-	const perHalf = passages.filter((p) => p.portal && p.star === 'morning').length;
+	const perHalf = passages.filter((p: GatePassage) => p.portal && p.star === 'morning').length;
 
 	const phaseOf = (star: Star): Phase => {
 		// La moitié se lit dans la **date** et non dans l'étoile de la conjonction : les jours de
@@ -846,7 +606,8 @@ export function computeJourney(date: Date, options: JourneyOptions = {}): VenusJ
 			end: to,
 			days: daysBetween(from, to),
 			passages: half,
-			portals: half.filter((p) => p.portal)
+			portals: half.filter((p) => p.portal),
+			inframonde: half.filter((p) => !p.observable)
 		};
 	};
 
@@ -883,8 +644,8 @@ export function computeJourney(date: Date, options: JourneyOptions = {}): VenusJ
 		date,
 		arcusVisionis,
 		gateWindowHours,
-		portalVisibility: PORTAL_VISIBILITY,
-		portalsPerHalf: perHalf,
+		portalVisibility: VISIBILITE_MINIMUM,
+		portalsParPhase: perHalf,
 		start,
 		mid,
 		end,

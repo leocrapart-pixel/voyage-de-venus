@@ -191,7 +191,7 @@
 		<span class="legend"><i style="background:#ff6b78"></i> rétrogradation {journey.retrograde ? `(${journey.retrograde.days.toFixed(0)} j)` : ''}</span>
 		<span class="legend"><i style="background:#8b5cf6;opacity:0.6"></i> inframonde {journey.invisible ? `(${journey.invisible.days.toFixed(1)} j)` : ''}</span>
 		<span class="legend legend-gates"
-			>{journey.portalsPerHalf} portails par moitié · {journey.morning.portals.length +
+			>{journey.portalsParPhase} portails par phase · {journey.morning.portals.length +
 				journey.evening.portals.length} dans ce cycle</span
 		>
 	</figcaption>

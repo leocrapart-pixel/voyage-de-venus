@@ -97,7 +97,7 @@ describe('the page', () => {
 			expect(rows[index]).toContain(gate.name);
 			expect(rows[index]).toContain(gate.sanskrit);
 		}
-		expect(rows.slice(GATES.length).join(' ')).toMatch(/intentionnelle|Inframonde/);
+		expect(rows.slice(GATES.length).join(' ')).toMatch(/Conscience/);
 	});
 
 	it('renders the chakra figure with the seven measured hotspots', async () => {

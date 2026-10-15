@@ -2,29 +2,23 @@
 	import { passageForGate, type GatePassage, type VenusJourney } from '../astro/cycle';
 	import { formatDate, formatDayAndTime, formatZodiac } from '../format';
 	import {
+		AWARENESS,
 		CHAKRA_IMAGE,
 		GATES,
+		isAwarenessKey,
 		spotFor,
-		type Gate,
-		type Threshold,
-		type UnderworldDay
+		type Awareness,
+		type Gate
 	} from '../symbolic/gates';
 
 	/**
-	 * The seven centres, drawn over the chakra figure.
+	 * Les sept centres du corps, et les portails qui n'en sont pas.
 	 *
-	 * The hotspots are positioned from measurements taken off the image itself rather
-	 * than guessed: each chakra is painted in its canonical hue, so the PNG was decoded
-	 * pixel by pixel and the centre of each colour cluster recorded (see
-	 * `CHAKRA_SPOTS` in `src/lib/symbolic/gates.ts`). That is why the rings sit exactly
-	 * on the figure at any size.
+	 * L'image porte les sept chakras ; les anneaux sont posés aux positions **mesurées** dans
+	 * l'image elle-même (voir `CHAKRA_SPOTS`). Le huitième portail — la conscience — n'a pas de
+	 * place sur le corps : il est dessiné sous la figure, à part, et gris comme lui.
 	 *
-	 * State is per gate, not per passage:
-	 *
-	 * - **ouvert** — the Moon is inside the orb of Venus and this gate is the one open;
-	 * - **prochain** — the next conjunction Venus will hand over a garment at;
-	 * - **franchi** — already passed in this half of the cycle;
-	 * - **voilé** — still to come, garment still worn.
+	 * Un portail est ouvert, prochain, franchi ou à venir, selon la date du moment observé.
 	 */
 	interface Props {
 		journey: VenusJourney;
@@ -34,157 +28,80 @@
 
 	let { journey, selected: pickedPassage = null, onselect }: Props = $props();
 
+	type State = 'ouvert' | 'prochain' | 'franchi' | 'voilé';
+
 	/** Le portail que le lecteur a désigné, s'il y en a un. */
 	const selected = $derived<GatePassage | null>(pickedPassage ?? null);
 
-	type State = 'ouvert' | 'prochain' | 'franchi' | 'voilé';
-
-	interface Centre {
-		key: string;
-		name: string;
-		chakra: string;
-		sanskrit: string;
-		index: number;
-		color: string;
-		x: number;
-		y: number;
-		/** Measured radius of the symbol in viewBox units. */
-		r: number;
-		state: State;
-		passage: GatePassage | null;
-		/** Le chakra, le jour de l'inframonde ou le seuil ouvert à ce rang. */
-		portal: Gate | UnderworldDay | Threshold;
-	}
-
 	const activePassage = $derived(journey.activePassage);
 	const nextPassage = $derived(journey.nextPassage);
-	/**
-	 * The portals of the half of the cycle in progress, in order.
-	 *
-	 * Seven of them, or eight when this half happens to hold one observable conjunction
-	 * more — in which case the eighth is the threshold rather than a chakra, and it is drawn
-	 * apart from the body because it has no place on it.
-	 */
-	const portals = $derived(
-		(journey.star === 'morning' ? journey.morning.portals : journey.evening.portals).slice()
+
+	/** Les portails de la phase en cours, dans l'ordre de lecture. */
+	const portals = $derived((journey.star === 'morning' ? journey.morning.portals : journey.evening.portals).slice());
+
+	const rows = $derived(
+		portals
+			.slice()
+			.sort((a, b) => a.index - b.index)
+			.map((passage) => {
+				const gate = passage.gate as Partial<Gate>;
+				const isChakra = !isAwarenessKey(passage.gate.key);
+				return {
+					key: `${passage.index}-${passage.gate.key}`,
+					gateKey: passage.gate.key,
+					isChakra,
+					name: passage.gate.name,
+					sub: isChakra ? `${gate.chakra ?? ''} · ${gate.sanskrit ?? ''}` : 'hors du corps',
+					index: passage.index,
+					color: passage.gate.color,
+					state: stateOf(passage),
+					passage
+				};
+			})
 	);
 
-	/** The seven chakras, with the state the reader's half gives them. */
-	const centres = $derived<Centre[]>(
-		GATES.map((gate) => {
-			const spot = spotFor(gate.key);
-			const passage = passageForGate(journey, gate.key);
-			const state: State =
-				gate.key === activePassage?.gate.key
-					? 'ouvert'
-					: gate.key === nextPassage?.gate.key
-						? 'prochain'
-						: passage && passage.at.getTime() < journey.date.getTime()
-							? 'franchi'
-							: 'voilé';
-			return {
-				key: gate.key,
-				name: gate.name,
-				chakra: gate.chakra,
-				sanskrit: gate.sanskrit,
-				index: gate.index,
-				color: gate.color,
-				x: spot.x * CHAKRA_IMAGE.width,
-				y: spot.y * CHAKRA_IMAGE.height,
-				r: spot.r * CHAKRA_IMAGE.width,
-				state,
-				passage,
-				portal: gate
-			};
-		})
-	);
-
-	/** The threshold of this half, when it has one. */
-	/** Une entrée de la liste : un chakra, un jour de l'inframonde, ou le seuil. */
-	interface Row {
-		key: string;
-		/** La clé du portail, sans le rang : un chakra peut revenir au huitième rang. */
-		gateKey: string;
-		name: string;
-		sub: string;
-		index: number;
-		color: string;
-		state: State;
-		seuil: GatePassage;
-	}
-
-	/** L'état d'un portail, quel qu'il soit. */
 	function stateOf(passage: GatePassage): State {
 		if (passage.gate.key === activePassage?.gate.key) return 'ouvert';
 		if (passage.gate.key === nextPassage?.gate.key) return 'prochain';
 		return passage.at.getTime() < journey.date.getTime() ? 'franchi' : 'voilé';
 	}
 
-	/** Les clés des sept chakras, pour distinguer une entrée de chakra d'un jour ou d'un seuil. */
-	const ROW_CHAKRAS = new Set<string>(GATES.map((g) => g.key));
-
-	/** Les portails de la moitié qui n'ont pas de place sur le corps : les jours et le seuil. */
-	const horsCorps = $derived(
-		portals
-			.filter((p) => !GATES.some((g) => g.key === p.gate.key))
-			.slice()
-			.sort((a, b) => a.index - b.index)
+	/** Les sept chakras, avec leur état. */
+	const centres = $derived(
+		GATES.map((gate) => {
+			const spot = spotFor(gate.key);
+			const passage = passageForGate(journey, gate.key);
+			return {
+				...gate,
+				x: spot.x * CHAKRA_IMAGE.width,
+				y: spot.y * CHAKRA_IMAGE.height,
+				r: spot.r * CHAKRA_IMAGE.width,
+				state: passage ? stateOf(passage) : ('voilé' as State)
+			};
+		})
 	);
 
-	/** Les onze portails de la moitié, dans l'ordre de lecture du mythe. */
-	const rows = $derived<Row[]>(
-		portals
-			.slice()
-			.sort((a, b) => a.index - b.index)
-			.map((p) => {
-				const gate = p.gate as Partial<Gate> & { key: string; name: string; color: string };
-				// Les sept chakras portent un centre du corps ; les jours et le seuil n'en ont aucun.
-				const isChakra = GATES.some((g) => g.key === p.gate.key);
-				return {
-					// Un chakra peut revenir au huitième rang — la couronne à la descente, la racine à
-					// l'ascension —, donc la clé porte aussi le rang.
-					key: `${p.index}-${p.gate.key}`,
-					gateKey: p.gate.key,
-					name: p.gate.name,
-					sub: isChakra ? `${gate.chakra ?? ''} · ${gate.sanskrit ?? ''}` : 'sans chakra',
-					index: p.index,
-					color: p.gate.color,
-					state: stateOf(p),
-					seuil: p
-				};
-			})
-	);
+	/** Le huitième portail de la phase, s'il y en a un. */
+	const conscience = $derived(portals.find((p) => isAwarenessKey(p.gate.key)) ?? null);
 
-	/** Le portail que le panneau décrit : celui qu'on a cliqué, sinon celui qui est ouvert. */
+	/** Le portail que le panneau décrit : celui qu'on a désigné, sinon celui qui est ouvert. */
 	const focus = $derived.by((): GatePassage | null => {
 		const chosen = pickedPassage;
 		if (chosen) {
-			const picked = rows.find((r) => r.seuil.at.getTime() === chosen.at.getTime());
-			if (picked) return picked.seuil;
+			const picked = rows.find((r) => r.passage.at.getTime() === chosen.at.getTime());
+			if (picked) return picked.passage;
 		}
 		return (
-			rows.find((r) => r.state === 'ouvert')?.seuil ??
-			rows.find((r) => r.state === 'prochain')?.seuil ??
+			rows.find((r) => r.state === 'ouvert')?.passage ??
+			rows.find((r) => r.state === 'prochain')?.passage ??
 			null
 		);
 	});
 
-	/** Ce que le panneau de détail doit montrer : un seuil, un jour, ou un chakra. */
-	const seuilFocus = $derived(
-		focus && 'anchor' in focus.gate
-			? { passage: focus, seuil: focus.gate as Threshold }
-			: null
+	const focusGate = $derived(focus && !isAwarenessKey(focus.gate.key) ? (focus.gate as Gate) : null);
+	const focusConscience = $derived(
+		focus && isAwarenessKey(focus.gate.key) ? (focus.gate as Awareness) : null
 	);
-	const jourFocus = $derived(
-		focus && 'meaning' in focus.gate && !('anchor' in focus.gate)
-			? { passage: focus, jour: focus.gate as UnderworldDay }
-			: null
-	);
-	const chakraFocus = $derived(
-		focus && GATES.some((g) => g.key === focus.gate.key) ? { passage: focus, portal: focus.gate as Gate } : null
-	);
-
-
 </script>
 
 <div class="diagram">
@@ -210,22 +127,12 @@
 					{/each}
 				</defs>
 
-				<!-- the axis of the descent -->
 				<line x1="298" y1="61" x2="298" y2="706" stroke="#ffffff" stroke-width="1" opacity="0.12" />
 
 				{#each centres as c (c.key)}
 					{#if c.state === 'ouvert' || c.state === 'prochain'}
-						<circle
-							cx={c.x}
-							cy={c.y}
-							r={c.r * 1.9}
-							fill="url(#halo-{c.key})"
-							class="halo"
-							class:live={c.state === 'ouvert'}
-						/>
+						<circle cx={c.x} cy={c.y} r={c.r * 1.9} fill="url(#halo-{c.key})" class="halo" class:live={c.state === 'ouvert'} />
 					{/if}
-					<!-- Ring sized from the measured symbol, with a hit target that never
-					     shrinks below 34 px so the small centres stay clickable. -->
 					<circle
 						class="gate-ring"
 						cx={c.x}
@@ -239,29 +146,22 @@
 					/>
 					<circle class="gate-hit" cx={c.x} cy={c.y} r={Math.max(c.r + 6, 34)} fill="transparent" />
 				{/each}
-				<!-- Les portails qui ne sont pas des chakras — les trois jours de l'inframonde et le
-				     seuil — n'ont pas de place sur le corps : ils sont posés sous la figure, en gris. -->
-				{#each horsCorps as p, i (p.gate.key)}
+
+				<!-- Le huitième portail n'est pas un centre du corps : il est posé sous la figure. -->
+				{#if conscience}
 					<circle
 						class="hors-corps"
-						cx={298 + (i - (horsCorps.length - 1) / 2) * 46}
+						cx="298"
 						cy="760"
-						r="17"
+						r="19"
 						fill="none"
-						stroke={p.gate.color}
-						stroke-width={p.gate.key === activePassage?.gate.key ? 2.6 : 1.4}
-						stroke-dasharray={p.at.getTime() > journey.date.getTime() ? '3 4' : 'none'}
-						opacity={p.at.getTime() > journey.date.getTime() ? 0.5 : 1}
+						stroke={AWARENESS.color}
+						stroke-width={conscience.gate.key === activePassage?.gate.key ? 2.6 : 1.4}
+						stroke-dasharray={conscience.at.getTime() > journey.date.getTime() ? '3 4' : 'none'}
+						opacity={conscience.at.getTime() > journey.date.getTime() ? 0.55 : 1}
 					/>
-					<text
-						x={298 + (i - (horsCorps.length - 1) / 2) * 46}
-						y="765"
-						text-anchor="middle"
-						font-size="12"
-						fill={p.gate.color}
-						opacity="0.95">{p.index}</text
-					>
-				{/each}
+					<text x="298" y="765" text-anchor="middle" font-size="13" fill={AWARENESS.color} opacity="0.95">8</text>
+				{/if}
 			</svg>
 		</div>
 		<p class="credit">
@@ -276,11 +176,12 @@
 				<li>
 					<button
 						type="button"
-						class="gate {r.state} {ROW_CHAKRAS.has(r.gateKey) ? 'chakra' : 'seuil'}"
-						class:selected={selected?.at.getTime() === r.seuil.at.getTime()}
+						class="gate {r.state}"
+						class:hors={!r.isChakra}
+						class:selected={selected?.at.getTime() === r.passage.at.getTime()}
 						style="--gate:{r.color}"
-						onclick={() => onselect?.(selected?.at.getTime() === r.seuil.at.getTime() ? null : r.seuil)}
-						aria-pressed={selected?.at.getTime() === r.seuil.at.getTime()}
+						onclick={() => onselect?.(selected?.at.getTime() === r.passage.at.getTime() ? null : r.passage)}
+						aria-pressed={selected?.at.getTime() === r.passage.at.getTime()}
 					>
 						<span class="marker">{r.index}</span>
 						<span class="text">
@@ -300,72 +201,42 @@
 			{/each}
 		</ul>
 
-		{#if seuilFocus}
-			{@const t = seuilFocus.seuil}
-			{@const p = seuilFocus.passage}
-			<article class="detail seuil" style="--gate:{t.color}">
+		{#if focusGate && focus}
+			<article class="detail" style="--gate:{focusGate.color}">
 				<header>
-					<span class="eyebrow">Portail {p.index} · seuil · sans chakra</span>
-					<h3>{t.name}</h3>
-				</header>
-				<dl>
-					<div>
-						<dt>Ce qu’est ce seuil</dt>
-						<dd>{t.meaning}</dd>
-					</div>
-					<div>
-						<dt>Ancrage astronomique</dt>
-						<dd>{t.anchor}</dd>
-					</div>
-					<div>
-						<dt>Conjonction exacte</dt>
-						<dd class="num">{formatDayAndTime(p.at)} · {formatZodiac(p.longitude)}</dd>
-					</div>
-				</dl>
-			</article>
-		{:else if jourFocus}
-			{@const d = jourFocus.jour}
-			{@const p = jourFocus.passage}
-			<article class="detail jour" style="--gate:{d.color}">
-				<header>
-					<span class="eyebrow">Portail {p.index} · inframonde · sans chakra</span>
-					<h3>{d.name}</h3>
-				</header>
-				<dl>
-					<div>
-						<dt>Ce qui se passe</dt>
-						<dd>{d.meaning}</dd>
-					</div>
-					<div>
-						<dt>Conjonction exacte</dt>
-						<dd class="num">{formatDayAndTime(p.at)} · {formatZodiac(p.longitude)}</dd>
-					</div>
-				</dl>
-			</article>
-		{:else if chakraFocus}
-			{@const g = chakraFocus.portal as Gate}
-			<article class="detail" style="--gate:{g.color}">
-				<header>
-					<span class="eyebrow">Portail {g.index} · {g.chakra} · {g.sanskrit}</span>
-					<h3>{g.name}</h3>
+					<span class="eyebrow">Portail {focus.index} · {focusGate.chakra} · {focusGate.sanskrit}{focusGate.nameSource === 'proposed' ? ' · nom proposé' : ''}</span>
+					<h3>{focusGate.name}</h3>
 				</header>
 				<dl>
 					<div>
 						<dt>Vêtement abandonné</dt>
-						<dd>{g.garment}</dd>
+						<dd>{focusGate.garment}</dd>
 					</div>
 					<div>
 						<dt>Ce qui est lâché</dt>
-						<dd>{g.release}</dd>
+						<dd>{focusGate.release}</dd>
 					</div>
-					{#if chakraFocus.passage}
-						<div>
-							<dt>Conjonction exacte</dt>
-							<dd class="num">
-								{formatDayAndTime(chakraFocus.passage.at)} · {formatZodiac(chakraFocus.passage.longitude)}
-							</dd>
-						</div>
-					{/if}
+					<div>
+						<dt>Conjonction exacte</dt>
+						<dd class="num">{formatDayAndTime(focus.at)} · {formatZodiac(focus.longitude)}</dd>
+					</div>
+				</dl>
+			</article>
+		{:else if focusConscience && focus}
+			<article class="detail hors" style="--gate:{focusConscience.color}">
+				<header>
+					<span class="eyebrow">Portail {focus.index} · hors du corps</span>
+					<h3>{focusConscience.name}</h3>
+				</header>
+				<dl>
+					<div>
+						<dt>Ce qu’il est</dt>
+						<dd>{focusConscience.meaning}</dd>
+					</div>
+					<div>
+						<dt>Conjonction exacte</dt>
+						<dd class="num">{formatDayAndTime(focus.at)} · {formatZodiac(focus.longitude)}</dd>
+					</div>
 				</dl>
 			</article>
 		{/if}
@@ -376,7 +247,7 @@
 			{:else if nextPassage}
 				Prochain portail : {nextPassage.index} · {nextPassage.gate.name} — {formatDate(nextPassage.at)}.
 			{:else}
-				Aucun portail à venir dans cette moitié du cycle.
+				Aucun portail à venir dans cette phase.
 			{/if}
 		</p>
 	</div>
@@ -415,10 +286,6 @@
 		width: 100%;
 		height: 100%;
 		object-fit: contain;
-		/* The file is the dark edition, built from the original by
-		   `tools/make-dark-figure.py`: paper made transparent, line work inverted in
-		   luminance only (so no hue moves), and each centre normalised to its canonical
-		   chakra colour. Nothing is filtered at runtime. */
 	}
 
 	.veil {
@@ -495,14 +362,9 @@
 		opacity: 0.45;
 	}
 
-	/* Les jours de l'inframonde et le seuil sont gris : c'est le temps de l'invisible, et ils
-	   n'ouvrent aucun centre du corps. */
-	.gate.seuil {
+	.gate.hors {
 		background: #ffffff03;
-	}
-
-	.gate.seuil .marker {
-		border-color: var(--gate);
+		border-style: dashed;
 	}
 
 	.marker {
@@ -586,12 +448,6 @@
 		margin: 0.1rem 0 0;
 		font-size: 0.82rem;
 		color: var(--ink-dim);
-	}
-
-	.aside {
-		display: block;
-		font-size: 0.7rem;
-		color: var(--ink-ghost);
 	}
 
 	.axis {

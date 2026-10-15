@@ -128,25 +128,37 @@ Le chakra reste sur chaque porte parce que c'est lui que la figure dessine et qu
 dépouille : **le nom dit ce que la porte gouverne, le chakra dit où elle passe**. L'interface
 affiche « Portail de l'Autorité » et, en second, « Couronne · Sahasrāra ».
 
-### La forme du cycle dépend de son nombre de conjonctions
+### La sélection des portails : élongation d'abord, orbe ensuite
 
-Le cycle entier est compté, puis sa forme en découle :
+Pour chaque phase — étoile du matin, la descente ; étoile du soir, l'ascension — les portails se
+déterminent en trois temps :
 
-| Total de conjonctions Vénus-Lune | Chakras par moitié | Seuil de vie et de mort |
-| --- | --- | --- |
-| **17 ou moins** | 7 | **absent** — 7 + 3 + 7 |
-| **plus de 17** | 8 | **présent** — 8 + n + 8, avec n = 2 ou 3 jours d'inframonde |
+1. **Visibilité.** Une conjonction Lune-Vénus ne compte que si Vénus est visible, c'est-à-dire si
+   son élongation au Soleil dépasse **10°**. En deçà, Vénus est dans l'inframonde : la conjonction
+   a lieu, mais elle n'appartient à aucune phase et n'ouvre aucun portail. Ces conjonctions sont
+   listées à part, comme écartées ;
+2. **Orbe.** Parmi les visibles, on garde les **mieux serrées** — c'est la distance angulaire
+   Lune-Vénus qui départage ;
+3. **Plafond.** Jamais plus de huit. Au-delà, la conjonction la plus proche du Soleil est écartée.
 
-Le seuil n'est pas une conjonction Vénus-Lune : c'est le franchissement du seuil de visibilité,
-l'instant où **Vénus seule** entre dans le Soleil ou en ressort — coucher héliaque trois jours
-avant la conjonction inférieure, lever héliaque trois jours après. Il s'ajoute donc aux
-conjonctions au lieu d'en consommer une.
+Les portails retenus sont ensuite numérotés **par date croissante**, et chaque rang reçoit son
+chakra dans l'ordre traditionnel : couronne, troisième œil, gorge, cœur, plexus solaire, sacré,
+racine. Le huitième rang n'est pas un chakra : c'est le **Portail de la Conscience** — l'intention
+qui traverse les sept, devenue consciente. Il n'a ni centre ni sanskrit, et il est dessiné **hors
+du corps**, sous la figure.
 
-**Ce que la mesure donne.** Sur **124 cycles entre 1900 et 2100**, le total vaut **19** (28
-cycles) ou **20** (96 cycles) — **jamais 17 ni moins**. Le seuil est donc présent dans tous les
-cycles de la période, et chaque moitié porte huit chakras : la racine et la couronne ouvrent
-chacune deux portails, la seconde fois au huitième rang, après quoi viennent les jours puis le
-seuil.
+Ce que la mesure a montré, sur les cycles 2018-2036 puis sur 248 phases de 1900 à 2100 :
+
+| Constat | Mesure |
+| --- | --- |
+| Un orbe de 1° retient | **1 à 4 portails par cycle**, pas sept ou huit |
+| L'élongation seule (10°) retient | **8 conjonctions visibles par phase** |
+| Portails par phase après plafond | **8 sur 248 phases**, jamais 7 |
+| Le cas « 7 portails » | **ne se produit pas** sur deux siècles |
+
+C'est donc **l'élongation qui fait le compte**, et l'orbe qui choisit lesquelles garder. Le
+huitième portail est présent dans toutes les phases de la période, et le cas à sept portails —
+sept chakras sans conscience — reste théorique.
 
 Les sept portails portent le nom de ce qu'ils gouvernent, et chacun garde son chakra :
 
@@ -164,14 +176,10 @@ Six de ces noms viennent du jeu de données 1952-2001, dont l'appariement portai
 ambiguïté sur 34 entrées. Le jeu ne nomme pas le troisième œil : **Portail de la Vision** est le
 seul nom proposé, et l'interface le dit.
 
-Les **jours de l'inframonde** sont les conjonctions qui restent après les chakras. Ils sont
-**gris** et sans chakra : ils ne passent par aucun centre du corps. Comme ils n'ont pas de place
-anatomique, ils sont dessinés sous la figure et non sur elle.
-
-L'ordre de lecture suit le mythe et non le calendrier : la descente descend — chakras, jours,
-mort —, l'ascension remonte — vie, jours, chakras. C'est pourquoi l'ascension se lit
+L'ordre de lecture suit le mythe : la descente descend — couronne d'abord, racine ensuite —,
+l'ascension remonte — racine d'abord, couronne ensuite. C'est pourquoi l'ascension se lit
 **Manifestation → Créativité → Pouvoir Personnel → Compassion → Communication → Vision →
-Autorité** : la même échelle, parcourue à l'envers.
+Autorité**, puis la conscience.
 
 ### Le rang est un ordre de lecture, pas une date
 

@@ -131,15 +131,20 @@ affiche « Portail de l'Autorité » et, en second, « Couronne · Sahasrāra »
 ### La sélection des portails : élongation d'abord, orbe ensuite
 
 Pour chaque phase — étoile du matin, la descente ; étoile du soir, l'ascension — les portails se
-déterminent en trois temps :
+déterminent en quatre temps :
 
 1. **Visibilité.** Une conjonction Lune-Vénus ne compte que si Vénus est visible, c'est-à-dire si
    son élongation au Soleil dépasse **10°**. En deçà, Vénus est dans l'inframonde : la conjonction
    a lieu, mais elle n'appartient à aucune phase et n'ouvre aucun portail. Ces conjonctions sont
-   listées à part, comme écartées ;
-2. **Orbe.** Parmi les visibles, on garde les **mieux serrées** — c'est la distance angulaire
-   Lune-Vénus qui départage ;
-3. **Plafond.** Jamais plus de huit. Au-delà, la conjonction la plus proche du Soleil est écartée.
+   listées à part, comme écartées. C'est ce qui vide le **début et le milieu** du cycle, où Vénus
+   passe derrière le Soleil puis devant lui ;
+2. **Rétrogradation.** Une conjonction qui tombe pendant que Vénus rétrograde n'ouvre rien non
+   plus : la planète revient sur ses pas, elle ne franchit aucune porte nouvelle. La
+   rétrogradation dure six semaines et encadre la conjonction inférieure — celle qui ferme le
+   cycle comme celle qui l'ouvre —, donc ce sont les conjonctions de la charnière qui tombent ;
+3. **Orbe.** Parmi celles qui restent, on garde les **mieux serrées** — c'est la distance
+   angulaire Lune-Vénus qui départage ;
+4. **Plafond.** Jamais plus de huit. Au-delà, la conjonction la plus proche du Soleil est écartée.
 
 Les portails retenus sont ensuite numérotés **par date croissante**, et chaque rang reçoit son
 portail. Les deux phases ne se lisent pas dans le même sens :
@@ -167,13 +172,14 @@ Ce que la mesure a montré, sur les cycles 2018-2036 puis sur 248 phases de 1900
 | Constat | Mesure |
 | --- | --- |
 | Un orbe de 1° retient | **1 à 4 portails par cycle**, pas sept ou huit |
-| L'élongation seule (10°) retient | **8 conjonctions visibles par phase** |
-| Portails par phase après plafond | **8 sur 248 phases**, jamais 7 |
-| Le cas « 7 portails » | **ne se produit pas** sur deux siècles |
+| L'élongation seule (10°) retient | **8 à 9 conjonctions visibles par phase** |
+| Après le filtre de rétrogradation | **7 portails : 23 phases · 8 portails : 225 phases** |
 
-C'est donc **l'élongation qui fait le compte**, et l'orbe qui choisit lesquelles garder. Le
-huitième portail est présent dans toutes les phases de la période, et le cas à sept portails —
-sept chakras sans conscience — reste théorique.
+Sur **248 phases entre 1900 et 2100**, le compte tombe donc enfin sur ce que la méthode annonce :
+**sept portails 9,3 % du temps, huit portails 90,7 % du temps**. C'est l'élongation qui fait le
+compte, la rétrogradation qui l'ajuste, et l'orbe qui choisit lesquelles garder. Une phase à sept
+portails n'a pas de huitième : la descente s'arrête à la racine, l'ascension déroule six chakras
+après la vie.
 
 Les sept portails portent le nom de ce qu'ils gouvernent, et chacun garde son chakra :
 

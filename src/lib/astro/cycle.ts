@@ -479,7 +479,8 @@ function organise(
 	mid: Conjunction,
 	end: Conjunction,
 	now: Date,
-	windowHours: number
+	windowHours: number,
+	retrograde: RetrogradeWindow | null
 ): GatePassage[] {
 	const inCycle = raw
 		.filter((c) => c.at.getTime() >= start.at.getTime() && c.at.getTime() <= end.at.getTime())
@@ -495,12 +496,36 @@ function organise(
 	const rank = new Map<number, number>();
 	const portal = new Map<number, Gate | Threshold>();
 
+	// La rétrogradation qui encadre la conjonction inférieure de fermeture : Vénus tourne autour
+	// d'elle comme autour de celle qui ouvre le cycle. On la cherche pour écarter les conjonctions
+	// qui y tombent.
+	const closing = findRetrogradeWindow(end.at);
+	const closingRetrogradeStart = closing ? closing.retrogradeStation.at.getTime() : Number.POSITIVE_INFINITY;
+	const closingRetrogradeEnd = closing ? closing.directStation.at.getTime() : Number.NEGATIVE_INFINITY;
+
 	for (const star of ['morning', 'evening'] as const) {
 		const phase = inCycle.filter((c) => c.star === star);
 
-		// 1. Écartées d'emblée : les conjonctions de l'inframonde, où Vénus est invisible. Elles
-		//    n'appartiennent à aucune phase et n'ouvrent donc aucun portail.
-		const visibles = phase.filter((c) => Math.abs(c.elongation) > VISIBILITE_MINIMUM);
+		/**
+		 * Une conjonction tombe-t-elle pendant que Vénus rétrograde ?
+		 *
+		 * La rétrogradation couvre les six semaines qui entourent la conjonction inférieure : celle
+		 * qui ouvre le cycle, et celle qui le ferme. Une conjonction qui y tombe n'ouvre pas de
+		 * portail — la planète revient sur ses pas, elle ne franchit rien de neuf.
+		 */
+		const dansRetrograde = (c: MoonVenusConjunction) =>
+			!!retrograde &&
+			((c.at.getTime() >= retrograde.retrogradeStation.at.getTime() &&
+				c.at.getTime() <= retrograde.directStation.at.getTime()) ||
+				// La rétrogradation qui ferme le cycle, autour de la conjonction inférieure suivante.
+				(c.at.getTime() >= closingRetrogradeStart && c.at.getTime() <= closingRetrogradeEnd));
+
+		// 1. Écartées d'emblée : celles de l'inframonde, où Vénus est invisible, et celles de la
+		//    rétrogradation. Ni les unes ni les autres n'appartiennent à une phase : elles n'ouvrent
+		//    aucun portail.
+		const visibles = phase.filter(
+			(c) => Math.abs(c.elongation) > VISIBILITE_MINIMUM && !dansRetrograde(c)
+		);
 
 		// 2. On garde les plus serrées — c'est l'orbe qui départage — et jamais plus de huit.
 		//    Au-delà de huit, la plus proche du Soleil est écartée.
@@ -581,13 +606,15 @@ export function computeJourney(date: Date, options: JourneyOptions = {}): VenusJ
 	const sun = position(Body.Sun, date);
 	const elongation = signedDelta(venus.longitude, sun.longitude);
 
+	const retrograde = findRetrogradeWindow(start.at);
 	const passages = organise(
 		findMoonVenusConjunctions(shiftDays(start.at, -2), shiftDays(end.at, 2)),
 		start,
 		mid,
 		end,
 		date,
-		gateWindowHours
+		gateWindowHours,
+		retrograde
 	);
 
 	/** The number of portals each half holds — the same for both, by construction. */
@@ -664,7 +691,7 @@ export function computeJourney(date: Date, options: JourneyOptions = {}): VenusJ
 			elongation: AngleFromSun(Body.Venus, MakeTime(maxAt)),
 			star: maxVisibility === 'morning' ? 'morning' : 'evening'
 		},
-		retrograde: findRetrogradeWindow(start.at),
+		retrograde,
 		invisible,
 		inInframonde,
 		morning: phaseOf('morning'),

@@ -406,31 +406,38 @@ describe('la sélection des portails', () => {
 		}
 	});
 
-	it('retient les conjonctions les mieux serrées, et jamais plus de huit', () => {
+	it('retient les mieux serrées, et jamais plus de huit', () => {
 		for (const phase of [journey.morning, journey.evening]) {
-			const visibles = phase.passages.filter((p) => p.observable);
-			const kept = new Set(phase.portals.map((p) => p.at.getTime()));
-			// Quand il y a plus de huit conjonctions visibles, les portails sont les huit mieux
-			// serrées : toute écartée est moins serrée que la plus large des retenues.
-			if (visibles.length > 8) {
+			// Les conjonctions éligibles : visibles, et hors rétrogradation.
+			const eligibles = phase.passages.filter(
+				(p) => p.observable && !phase.inframonde.some((i) => i.at.getTime() === p.at.getTime()) && p.index > 0
+			);
+			expect(phase.portals.length).toBe(Math.min(eligibles.length, 8));
+			expect(phase.portals.length).toBeGreaterThanOrEqual(7);
+			// Quand il y a plus de huit éligibles, les portails sont les huit mieux serrées : toute
+			// écartée est moins serrée que la plus large des retenues.
+			if (eligibles.length > 8) {
+				const kept = new Set(phase.portals.map((p) => p.at.getTime()));
 				const widest = Math.max(...phase.portals.map((p) => p.separation));
-				for (const p of visibles.filter((v) => !kept.has(v.at.getTime()))) {
+				for (const p of eligibles.filter((v) => !kept.has(v.at.getTime()))) {
 					expect(p.separation).toBeGreaterThanOrEqual(widest);
 				}
-			} else {
-				expect(phase.portals.length).toBe(visibles.length);
 			}
 		}
 	});
 
-	it('descend les sept chakras puis remonte à l’envers', () => {
+	it('descend les chakras puis remonte à l’envers', () => {
 		const keys = (phase: typeof journey.morning) =>
 			phase.portals
 				.filter((p) => chakraKeys.has(p.gate.key))
 				.sort((a, b) => a.index - b.index)
 				.map((p) => p.gate.key);
-		expect(keys(journey.morning).slice(0, GATES.length)).toEqual(GATES.map((g) => g.key));
-		expect(keys(journey.evening).slice(0, GATES.length)).toEqual([...GATES].reverse().map((g) => g.key));
+		// La descente part de la couronne ; l'ascension part de la racine. Le nombre de chakras est
+		// celui des portails de la phase moins le seuil, qui en occupe un.
+		const chakrasMatin = Math.min(journey.morning.portals.length - 1, GATES.length);
+		const chakrasSoir = Math.min(journey.evening.portals.length - 1, GATES.length);
+		expect(keys(journey.morning)).toEqual(GATES.slice(0, chakrasMatin).map((g) => g.key));
+		expect(keys(journey.evening)).toEqual([...GATES].reverse().slice(0, chakrasSoir).map((g) => g.key));
 	});
 
 	it('nomme chaque portail d’après ce qu’il gouverne, et donne son chakra', () => {
@@ -470,28 +477,26 @@ describe('la sélection des portails', () => {
 	});
 
 	it('déroule l’ascension depuis la vie : manifestation, créativité, etc.', () => {
-		// L'ordre demandé, la vie en tête.
-		expect(journey.evening.portals.slice().sort((a, b) => a.index - b.index).map((p) => p.gate.name)).toEqual([
-			'Vie intentionnelle',
-			'Portail de la Manifestation',
-			'Portail de la Créativité',
-			'Portail du Pouvoir Personnel',
-			'Portail de la Compassion',
-			'Portail de la Communication',
-			'Portail de la Vision',
-			"Portail de l'Autorité"
-		]);
-		// Et la descente, de la couronne à la mort.
-		expect(journey.morning.portals.slice().sort((a, b) => a.index - b.index).map((p) => p.gate.name)).toEqual([
-			"Portail de l'Autorité",
-			'Portail de la Vision',
-			'Portail de la Communication',
-			'Portail de la Compassion',
-			'Portail du Pouvoir Personnel',
-			'Portail de la Créativité',
-			'Portail de la Manifestation',
-			'Mort intentionnelle'
-		]);
+		// Le rang suit l'ordre du mythe, et la vie est toujours la première.
+		const n = journey.evening.portals.length;
+		const attendu = ['Vie intentionnelle']
+			.concat(
+				['Portail de la Manifestation', 'Portail de la Créativité', 'Portail du Pouvoir Personnel',
+				 'Portail de la Compassion', 'Portail de la Communication', 'Portail de la Vision',
+				 "Portail de l'Autorité"].slice(0, n - 1)
+			);
+		expect(
+			journey.evening.portals.slice().sort((a, b) => a.index - b.index).map((p) => p.gate.name)
+		).toEqual(attendu);
+
+		// Et la descente, de la couronne jusqu'à la mort, qui ferme.
+		const m = journey.morning.portals.length;
+		const attenduMatin = ["Portail de l'Autorité", 'Portail de la Vision', 'Portail de la Communication',
+			'Portail de la Compassion', 'Portail du Pouvoir Personnel', 'Portail de la Créativité',
+			'Portail de la Manifestation'].slice(0, m - 1).concat(['Mort intentionnelle']);
+		expect(
+			journey.morning.portals.slice().sort((a, b) => a.index - b.index).map((p) => p.gate.name)
+		).toEqual(attenduMatin);
 	});
 
 	it('vérifie la règle sur huit cycles', () => {
@@ -507,10 +512,9 @@ describe('la sélection des portails', () => {
 		]) {
 			const j = computeJourney(at(iso));
 			for (const phase of [j.morning, j.evening]) {
+				// Sept ou huit, jamais plus : la rétrogradation en écarte une de temps en temps.
+				expect(phase.portals.length).toBeGreaterThanOrEqual(7);
 				expect(phase.portals.length).toBeLessThanOrEqual(8);
-				expect(phase.portals.length).toBe(
-					Math.min(phase.passages.filter((p) => p.observable).length, 8)
-				);
 			}
 		}
 	});

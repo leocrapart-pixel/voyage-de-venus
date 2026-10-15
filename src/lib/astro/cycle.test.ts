@@ -11,7 +11,7 @@ import {
 	type Conjunction
 } from './cycle';
 import { daysBetween, shiftDays } from './ephemeris';
-import { GATES, isAwarenessKey } from '../symbolic/gates';
+import { GATES } from '../symbolic/gates';
 
 const at = (iso: string) => new Date(iso);
 /** Hours between two instants. */
@@ -451,23 +451,47 @@ describe('la sélection des portails', () => {
 		}
 	});
 
-	it('place le huitième au rang 8, hors du corps, et seulement s’il y a huit visibles', () => {
-		for (const phase of [journey.morning, journey.evening]) {
-			const conscience = phase.portals.find((p) => isAwarenessKey(p.gate.key));
-			const visibles = phase.passages.filter((p) => p.observable).length;
-			if (visibles >= 8) {
-				expect(conscience, 'huit visibles ou plus sans portail de la conscience').toBeDefined();
-				expect(conscience!.index).toBe(8);
-				expect(conscience!.gate.name).toBe('Portail de la Conscience');
-				// Il n'est pas un centre du corps.
-				expect(conscience!.gate).not.toHaveProperty('chakra');
-				expect(conscience!.gate).not.toHaveProperty('sanskrit');
-			} else {
-				// Moins de huit visibles : les sept chakras, et pas de huitième.
-				expect(conscience).toBeUndefined();
-				expect(phase.portals.length).toBe(visibles);
-			}
+	it('ferme la descente par la mort et ouvre l’ascension par la vie', () => {
+		const mort = journey.morning.portals.find((p) => p.gate.key === 'mort-intentionnelle');
+		const vie = journey.evening.portals.find((p) => p.gate.key === 'vie-intentionnelle');
+		expect(mort, 'la mort intentionnelle manque à la descente').toBeDefined();
+		expect(vie, 'la vie intentionnelle manque à l’ascension').toBeDefined();
+
+		// La mort est le dernier portail de la descente ; la vie le premier de l'ascension.
+		expect(mort!.index).toBe(Math.max(...journey.morning.portals.map((p) => p.index)));
+		expect(vie!.index).toBe(1);
+
+		// Aucun des deux n'est un centre du corps.
+		for (const seuil of [mort!, vie!]) {
+			expect(seuil.gate).not.toHaveProperty('chakra');
+			expect(seuil.gate).not.toHaveProperty('sanskrit');
+			expect(seuil.gate).not.toHaveProperty('garment');
 		}
+	});
+
+	it('déroule l’ascension depuis la vie : manifestation, créativité, etc.', () => {
+		// L'ordre demandé, la vie en tête.
+		expect(journey.evening.portals.slice().sort((a, b) => a.index - b.index).map((p) => p.gate.name)).toEqual([
+			'Vie intentionnelle',
+			'Portail de la Manifestation',
+			'Portail de la Créativité',
+			'Portail du Pouvoir Personnel',
+			'Portail de la Compassion',
+			'Portail de la Communication',
+			'Portail de la Vision',
+			"Portail de l'Autorité"
+		]);
+		// Et la descente, de la couronne à la mort.
+		expect(journey.morning.portals.slice().sort((a, b) => a.index - b.index).map((p) => p.gate.name)).toEqual([
+			"Portail de l'Autorité",
+			'Portail de la Vision',
+			'Portail de la Communication',
+			'Portail de la Compassion',
+			'Portail du Pouvoir Personnel',
+			'Portail de la Créativité',
+			'Portail de la Manifestation',
+			'Mort intentionnelle'
+		]);
 	});
 
 	it('vérifie la règle sur huit cycles', () => {

@@ -33,11 +33,11 @@
 
 export type GateKey = 'crown' | 'brow' | 'throat' | 'heart' | 'solar' | 'sacral' | 'root';
 
-/** Le huitième portail, celui qui n'est pas un chakra. */
-export type AwarenessKey = 'conscience';
+/** Les deux seuils : la mort qui ferme la descente, la vie qui ouvre l'ascension. */
+export type ThresholdKey = 'mort-intentionnelle' | 'vie-intentionnelle';
 
 /** Tout ce qu'un portail peut ouvrir. */
-export type PortalKey = GateKey | AwarenessKey;
+export type PortalKey = GateKey | ThresholdKey;
 
 export interface Gate {
 	/** 1..7, l'ordre de la descente — couronne d'abord, racine ensuite. */
@@ -159,35 +159,55 @@ export const GATES: readonly Gate[] = [
 export const GATE_COUNT = GATES.length;
 
 /**
- * Le huitième portail : **Portail de la Conscience** — l'intention devenue consciente.
+ * Le huitième portail, aux deux bouts de la traversée.
  *
- * Il n'a pas de chakra, parce qu'il n'est pas un centre du corps : c'est le franchissement qui
- * achève les sept. Il n'apparaît que dans les phases qui comptent huit conjonctions visibles, et
- * prend alors le huitième rang, après les sept chakras, dans les deux sens du voyage.
+ * Il n'est pas un chakra : il n'a ni centre du corps ni nom sanskrit, et l'interface le dessine
+ * hors de la figure. Ce qu'il marque est le franchissement lui-même — l'instant où Vénus entre
+ * dans le Soleil ou en ressort.
+ *
+ * - **Mort intentionnelle** : elle ferme la descente, au coucher héliaque, la dernière
+ *   conjonction venue après les sept portes ;
+ * - **Vie intentionnelle** : elle ouvre l'ascension, au lever héliaque, avant que les sept
+ *   portes ne se déroulent dans l'ordre croissant — manifestation d'abord, puis créativité, et
+ *   jusqu'à l'autorité.
  */
-export interface Awareness {
-	/** 8 — toujours après les sept chakras. */
+export interface Threshold {
+	/** 8 à la descente, 1 à l'ascension. */
 	index: number;
-	key: AwarenessKey;
+	key: ThresholdKey;
 	name: string;
 	meaning: string;
+	star: 'morning' | 'evening';
 	color: string;
 	deep: string;
 }
 
-export const AWARENESS: Awareness = {
-	index: 8,
-	key: 'conscience',
-	name: 'Portail de la Conscience',
-	meaning:
-		'Le huitième portail : non plus un centre du corps, mais l’intention qui les traverse, devenue consciente. Inanna remonte en sachant ce qu’elle a lâché.',
-	color: '#d9d2f0',
-	deep: '#443c5e'
+export const THRESHOLDS: Readonly<Record<ThresholdKey, Threshold>> = {
+	'mort-intentionnelle': {
+		index: 8,
+		key: 'mort-intentionnelle',
+		name: 'Mort intentionnelle',
+		meaning:
+			'La descente s’achève : Vénus disparaît dans le Soleil. Inanna meurt, et ce qu’elle a lâché aux sept portes la précède.',
+		star: 'morning',
+		color: '#8b90a0',
+		deep: '#2c303a'
+	},
+	'vie-intentionnelle': {
+		index: 1,
+		key: 'vie-intentionnelle',
+		name: 'Vie intentionnelle',
+		meaning:
+			'La sortie de l’enfer : Vénus reparaît en étoile du soir. Inanna remonte, non plus couronnée mais intentionnelle.',
+		star: 'evening',
+		color: '#d9d2f0',
+		deep: '#443c5e'
+	}
 } as const;
 
-/** Ce portail est-il le huitième ? */
-export function isAwarenessKey(key: string): key is AwarenessKey {
-	return key === 'conscience';
+/** Ce portail est-il l'un des deux seuils ? */
+export function isThresholdKey(key: string): key is ThresholdKey {
+	return key === 'mort-intentionnelle' || key === 'vie-intentionnelle';
 }
 
 /** Élongation solaire minimale pour que Vénus soit tenue pour visible. */
@@ -213,22 +233,37 @@ export function gatesForStar(star: 'morning' | 'evening'): readonly Gate[] {
 /**
  * Les portails d'une phase, dans l'ordre de lecture.
  *
- * Les sept chakras d'abord, puis le huitième s'il y en a un : la conscience qui les traverse.
+ * **La descente** : les sept chakras de la couronne à la racine, puis la mort intentionnelle en
+ * huitième. Le seuil est au bout.
+ *
+ * **L'ascension** : la vie intentionnelle d'abord, puis les sept chakras de la racine à la
+ * couronne. Le seuil est à l'entrée — c'est par lui que Vénus reparaît.
+ *
+ * Dans les deux cas le seuil occupe la place que la phase lui laisse : la huitième à la descente,
+ * la première à l'ascension.
  */
 export function portalSequence(
 	star: 'morning' | 'evening',
 	count: number
-): readonly (Gate | Awareness)[] {
-	const base = gatesForStar(star);
-	const out: (Gate | Awareness)[] = base.slice(0, Math.min(count, GATE_COUNT));
-	if (count > GATE_COUNT) out.push(AWARENESS);
+): readonly (Gate | Threshold)[] {
+	const n = Math.max(0, Math.min(count, PORTAILS_MAXIMUM));
+	if (star === 'morning') {
+		// Sept chakras, puis la mort : le seuil ferme.
+		const out: (Gate | Threshold)[] = GATES_DESCENDING.slice(0, Math.min(n, GATE_COUNT));
+		if (n > GATE_COUNT) out.push(THRESHOLDS['mort-intentionnelle']);
+		return out;
+	}
+	// La vie d'abord, puis les chakras de la racine vers la couronne : le seuil ouvre.
+	if (n === 0) return [];
+	const out: (Gate | Threshold)[] = [THRESHOLDS['vie-intentionnelle']];
+	out.push(...GATES_ASCENDING.slice(0, Math.min(n - 1, GATE_COUNT)));
 	return out;
 }
 
 /** Le portail pour un rang de 1 à 8, dans une phase donnée. */
-export function portalForRank(rank: number, star: 'morning' | 'evening'): Gate | Awareness {
-	const sequence = portalSequence(star, Math.max(rank, GATE_COUNT));
-	return sequence[Math.min(rank, sequence.length) - 1] ?? GATES[0];
+export function portalForRank(rank: number, star: 'morning' | 'evening'): Gate | Threshold {
+	const sequence = portalSequence(star, PORTAILS_MAXIMUM);
+	return sequence[Math.min(Math.max(rank, 1), sequence.length) - 1] ?? GATES[0];
 }
 
 /** Le portail d'un chakra, par sa clé. */

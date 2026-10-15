@@ -142,10 +142,25 @@ déterminent en trois temps :
 3. **Plafond.** Jamais plus de huit. Au-delà, la conjonction la plus proche du Soleil est écartée.
 
 Les portails retenus sont ensuite numérotés **par date croissante**, et chaque rang reçoit son
-chakra dans l'ordre traditionnel : couronne, troisième œil, gorge, cœur, plexus solaire, sacré,
-racine. Le huitième rang n'est pas un chakra : c'est le **Portail de la Conscience** — l'intention
-qui traverse les sept, devenue consciente. Il n'a ni centre ni sanskrit, et il est dessiné **hors
-du corps**, sous la figure.
+portail. Les deux phases ne se lisent pas dans le même sens :
+
+| Rang | Descente — étoile du matin | Ascension — étoile du soir |
+| --- | --- | --- |
+| 1 | Portail de l'Autorité (Couronne) | **Vie intentionnelle** |
+| 2 | Portail de la Vision (Troisième œil) | Portail de la Manifestation (Racine) |
+| 3 | Portail de la Communication (Gorge) | Portail de la Créativité (Sacré) |
+| 4 | Portail de la Compassion (Cœur) | Portail du Pouvoir Personnel (Plexus solaire) |
+| 5 | Portail du Pouvoir Personnel (Plexus solaire) | Portail de la Compassion (Cœur) |
+| 6 | Portail de la Créativité (Sacré) | Portail de la Communication (Gorge) |
+| 7 | Portail de la Manifestation (Racine) | Portail de la Vision (Troisième œil) |
+| 8 | **Mort intentionnelle** | Portail de l'Autorité (Couronne) |
+
+La descente descend : la couronne d'abord, la racine ensuite, puis la **mort intentionnelle** qui
+ferme le voyage. L'ascension remonte : la **vie intentionnelle** ouvre — c'est par elle que Vénus
+reparaît —, puis les sept portes se déroulent de la racine vers la couronne.
+
+Les deux seuils ne sont pas des chakras : ni centre, ni sanskrit, ni vêtement. Ils sont dessinés
+**hors du corps**, sous la figure.
 
 Ce que la mesure a montré, sur les cycles 2018-2036 puis sur 248 phases de 1900 à 2100 :
 

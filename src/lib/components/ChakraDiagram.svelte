@@ -2,13 +2,12 @@
 	import { passageForGate, type GatePassage, type VenusJourney } from '../astro/cycle';
 	import { formatDate, formatDayAndTime, formatZodiac } from '../format';
 	import {
-		AWARENESS,
 		CHAKRA_IMAGE,
 		GATES,
-		isAwarenessKey,
+		isThresholdKey,
 		spotFor,
-		type Awareness,
-		type Gate
+		type Gate,
+		type Threshold
 	} from '../symbolic/gates';
 
 	/**
@@ -45,7 +44,7 @@
 			.sort((a, b) => a.index - b.index)
 			.map((passage) => {
 				const gate = passage.gate as Partial<Gate>;
-				const isChakra = !isAwarenessKey(passage.gate.key);
+				const isChakra = !isThresholdKey(passage.gate.key);
 				return {
 					key: `${passage.index}-${passage.gate.key}`,
 					gateKey: passage.gate.key,
@@ -81,8 +80,8 @@
 		})
 	);
 
-	/** Le huitième portail de la phase, s'il y en a un. */
-	const conscience = $derived(portals.find((p) => isAwarenessKey(p.gate.key)) ?? null);
+	/** Le seuil de la phase, s'il y en a un : la mort à la descente, la vie à l'ascension. */
+	const seuil = $derived(portals.find((p) => isThresholdKey(p.gate.key)) ?? null);
 
 	/** Le portail que le panneau décrit : celui qu'on a désigné, sinon celui qui est ouvert. */
 	const focus = $derived.by((): GatePassage | null => {
@@ -98,9 +97,9 @@
 		);
 	});
 
-	const focusGate = $derived(focus && !isAwarenessKey(focus.gate.key) ? (focus.gate as Gate) : null);
-	const focusConscience = $derived(
-		focus && isAwarenessKey(focus.gate.key) ? (focus.gate as Awareness) : null
+	const focusGate = $derived(focus && !isThresholdKey(focus.gate.key) ? (focus.gate as Gate) : null);
+	const focusSeuil = $derived(
+		focus && isThresholdKey(focus.gate.key) ? (focus.gate as Threshold) : null
 	);
 </script>
 
@@ -147,20 +146,21 @@
 					<circle class="gate-hit" cx={c.x} cy={c.y} r={Math.max(c.r + 6, 34)} fill="transparent" />
 				{/each}
 
-				<!-- Le huitième portail n'est pas un centre du corps : il est posé sous la figure. -->
-				{#if conscience}
+				<!-- Le seuil n'est pas un centre du corps : il est posé sous la figure. -->
+				{#if seuil}
+					{@const t = seuil.gate as Threshold}
 					<circle
 						class="hors-corps"
 						cx="298"
 						cy="760"
 						r="19"
 						fill="none"
-						stroke={AWARENESS.color}
-						stroke-width={conscience.gate.key === activePassage?.gate.key ? 2.6 : 1.4}
-						stroke-dasharray={conscience.at.getTime() > journey.date.getTime() ? '3 4' : 'none'}
-						opacity={conscience.at.getTime() > journey.date.getTime() ? 0.55 : 1}
+						stroke={t.color}
+						stroke-width={seuil.gate.key === activePassage?.gate.key ? 2.6 : 1.4}
+						stroke-dasharray={seuil.at.getTime() > journey.date.getTime() ? '3 4' : 'none'}
+						opacity={seuil.at.getTime() > journey.date.getTime() ? 0.55 : 1}
 					/>
-					<text x="298" y="765" text-anchor="middle" font-size="13" fill={AWARENESS.color} opacity="0.95">8</text>
+					<text x="298" y="765" text-anchor="middle" font-size="13" fill={t.color} opacity="0.95">{seuil.index}</text>
 				{/if}
 			</svg>
 		</div>
@@ -222,16 +222,16 @@
 					</div>
 				</dl>
 			</article>
-		{:else if focusConscience && focus}
-			<article class="detail hors" style="--gate:{focusConscience.color}">
+		{:else if focusSeuil && focus}
+			<article class="detail hors" style="--gate:{focusSeuil.color}">
 				<header>
-					<span class="eyebrow">Portail {focus.index} · hors du corps</span>
-					<h3>{focusConscience.name}</h3>
+					<span class="eyebrow">Portail {focus.index} · seuil · hors du corps</span>
+					<h3>{focusSeuil.name}</h3>
 				</header>
 				<dl>
 					<div>
 						<dt>Ce qu’il est</dt>
-						<dd>{focusConscience.meaning}</dd>
+						<dd>{focusSeuil.meaning}</dd>
 					</div>
 					<div>
 						<dt>Conjonction exacte</dt>

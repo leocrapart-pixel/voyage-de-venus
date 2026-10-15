@@ -97,7 +97,8 @@ describe('the page', () => {
 			expect(rows[index]).toContain(gate.name);
 			expect(rows[index]).toContain(gate.sanskrit);
 		}
-		expect(rows.slice(GATES.length).join(' ')).toMatch(/Conscience/);
+		// Le huitième portail de la phase : la mort à la descente, la vie à l'ascension.
+		expect(rows.slice(GATES.length).join(' ')).toMatch(/Mort intentionnelle|Vie intentionnelle/);
 	});
 
 	it('renders the chakra figure with the seven measured hotspots', async () => {

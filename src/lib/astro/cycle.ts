@@ -15,8 +15,8 @@ import {
 	PORTAILS_MAXIMUM,
 	VISIBILITE_MINIMUM,
 	portalSequence,
-	type Awareness,
 	type Gate,
+	type Threshold,
 	type PortalKey
 } from '../symbolic/gates';
 
@@ -125,9 +125,9 @@ export interface MoonVenusConjunction {
 	 */
 	half: Star;
 	waxing: boolean;
-	/** Ce que ce portail ouvre : un chakra, ou le portail de la conscience. */
-	gate: Gate | Awareness;
-	/** Rang dans sa phase : 1 à 7 les chakras, 8 le portail de la conscience. */
+	/** Ce que ce portail ouvre : un chakra, ou l'un des deux seuils. */
+	gate: Gate | Threshold;
+	/** Rang dans sa phase : 1 à 7 les chakras, 8 la mort à la descente, 1 la vie à l'ascension. */
 	index: number;
 	readOrder: number;
 	/** Vénus est-elle visible à cet instant — élongation au-delà de `VISIBILITE_MINIMUM` ? */
@@ -493,7 +493,7 @@ function organise(
 		}));
 
 	const rank = new Map<number, number>();
-	const portal = new Map<number, Gate | Awareness>();
+	const portal = new Map<number, Gate | Threshold>();
 
 	for (const star of ['morning', 'evening'] as const) {
 		const phase = inCycle.filter((c) => c.star === star);

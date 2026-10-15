@@ -146,23 +146,47 @@ déterminent en quatre temps :
    angulaire Lune-Vénus qui départage ;
 4. **Plafond.** Jamais plus de huit. Au-delà, la conjonction la plus proche du Soleil est écartée.
 
+Le seuil d'invisibilité est **fixé à 10°** et n'est pas réglable dans l'interface : une
+observation n'est pas un curseur.
+
 Les portails retenus sont ensuite numérotés **par date croissante**, et chaque rang reçoit son
 portail. Les deux phases ne se lisent pas dans le même sens :
 
-| Rang | Descente — étoile du matin | Ascension — étoile du soir |
+Le **numéro** d'un portail n'est pas son rang : il décroît de sept à zéro à la descente et croît
+de zéro à sept à l'ascension. La couronne porte le 7 et la racine le 0 en descendant ; l'inverse en
+remontant.
+
+**Cycle à huit portails** — le cas ordinaire, 90 % du temps :
+
+| Numéro | Descente — étoile du matin | Ascension — étoile du soir |
 | --- | --- | --- |
-| 1 | Portail de l'Autorité (Couronne) | **Vie intentionnelle** |
-| 2 | Portail de la Vision (Troisième œil) | Portail de la Manifestation (Racine) |
-| 3 | Portail de la Communication (Gorge) | Portail de la Créativité (Sacré) |
-| 4 | Portail de la Compassion (Cœur) | Portail du Pouvoir Personnel (Plexus solaire) |
-| 5 | Portail du Pouvoir Personnel (Plexus solaire) | Portail de la Compassion (Cœur) |
-| 6 | Portail de la Créativité (Sacré) | Portail de la Communication (Gorge) |
-| 7 | Portail de la Manifestation (Racine) | Portail de la Vision (Troisième œil) |
-| 8 | **Mort intentionnelle** | Portail de l'Autorité (Couronne) |
+| 7 | Portail de l'Autorité (Couronne) | Portail de l'Autorité (Couronne) |
+| 6 | Portail de la Vision (Troisième œil) | Portail de la Vision (Troisième œil) |
+| 5 | Portail de la Communication (Gorge) | Portail de la Communication (Gorge) |
+| 4 | Portail de la Compassion (Cœur) | Portail de la Compassion (Cœur) |
+| 3 | Portail du Pouvoir Personnel (Plexus solaire) | Portail du Pouvoir Personnel (Plexus solaire) |
+| 2 | Portail de la Créativité (Sacré) | Portail de la Créativité (Sacré) |
+| 1 | Portail de la Manifestation (Racine) | Portail de la Manifestation (Racine) |
+| 0 | **Mort intentionnelle** | **Vie intentionnelle** |
+
+**Cycle à sept portails** — quand la rétrogradation en a écarté un :
+
+| Numéro | Descente | Ascension |
+| --- | --- | --- |
+| 7 | Portail de l'Autorité | Portail de la Vision |
+| 6 | Portail de la Vision | Portail de la Communication |
+| 5 | Portail de la Communication | Portail de la Compassion |
+| 4 | Portail de la Compassion | Portail du Pouvoir Personnel |
+| 3 | Portail du Pouvoir Personnel | Portail de la Créativité |
+| 2 | Portail de la Créativité | Portail de la Manifestation |
+| 1 | Portail de la Manifestation | **Vie intentionnelle** |
+| — | **Mort intentionnelle** | — |
 
 La descente descend : la couronne d'abord, la racine ensuite, puis la **mort intentionnelle** qui
 ferme le voyage. L'ascension remonte : la **vie intentionnelle** ouvre — c'est par elle que Vénus
-reparaît —, puis les sept portes se déroulent de la racine vers la couronne.
+reparaît —, puis les portes se déroulent de la racine vers la couronne.
+
+Chaque portail **garde sa couleur** : elle vient du centre qu'il traverse, pas du numéro.
 
 Les deux seuils ne sont pas des chakras : ni centre, ni sanskrit, ni vêtement. Ils sont dessinés
 **hors du corps**, sous la figure.

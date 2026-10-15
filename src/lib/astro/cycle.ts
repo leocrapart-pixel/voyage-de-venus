@@ -14,7 +14,7 @@ import {
 	GATES,
 	PORTAILS_MAXIMUM,
 	VISIBILITE_MINIMUM,
-	portalSequence,
+	portalSteps,
 	type Gate,
 	type Threshold,
 	type PortalKey
@@ -41,17 +41,18 @@ export function passageForGate(journey: VenusJourney, key: PortalKey): GatePassa
 	return phase.portals.find((p) => p.gate.key === key) ?? null;
 }
 
-/** La phase de Vénus : étoile du matin, ou étoile du soir. */
-export type Star = 'morning' | 'evening';
-export type ConjunctionKind = 'inferior' | 'superior';
-
 /**
  * Élongation solaire au-dessous de laquelle Vénus est tenue pour invisible.
  *
- * Sert au paramètre `arcusVisionis` du voyage : c'est lui qui fixe la longueur de l'inframonde
- * affichée. La sélection des portails, elle, suit `VISIBILITE_MINIMUM`.
+ * Un seul seuil partout : il décide quelles conjonctions sont des portails, et il borne
+ * l'inframonde affiché. Il n'est plus réglable dans l'interface — une observation n'est pas un
+ * curseur.
  */
-export const DEFAULT_ARCUS_VISIONIS = 5;
+export const ARCUS_VISIONIS = 10;
+
+/** La phase de Vénus : étoile du matin, ou étoile du soir. */
+export type Star = 'morning' | 'evening';
+export type ConjunctionKind = 'inferior' | 'superior';
 
 /**
  * Demi-largeur, en heures, de la fenêtre pendant laquelle un portail est « en cours ».
@@ -127,7 +128,7 @@ export interface MoonVenusConjunction {
 	waxing: boolean;
 	/** Ce que ce portail ouvre : un chakra, ou l'un des deux seuils. */
 	gate: Gate | Threshold;
-	/** Rang dans sa phase : 1 à 7 les chakras, 8 la mort à la descente, 1 la vie à l'ascension. */
+	/** Rang dans l'ordre de lecture de sa phase : 1 à 7 les chakras, 8 la mort à la descente. */
 	index: number;
 	readOrder: number;
 	/** Vénus est-elle visible à cet instant — élongation au-delà de `VISIBILITE_MINIMUM` ? */
@@ -140,6 +141,14 @@ export interface MoonVenusConjunction {
 export interface GatePassage extends MoonVenusConjunction {
 	/** Vrai dans la demi-journée qui entoure l'instant exact. */
 	open: boolean;
+	/**
+	 * Le numéro affiché : sept à zéro à la descente, zéro à sept à l'ascension. La couronne porte
+	 * le 7 et la racine le 0 en descendant ; l'inverse en remontant. Les deux seuils prennent le
+	 * numéro qui reste — 0 à la descente, 0 à l'ascension quand il y a huit portails.
+	 *
+	 * Ce n'est pas le rang : le rang sert à ordonner, le numéro à lire.
+	 */
+	position: number;
 }
 
 export interface Phase {
@@ -163,7 +172,6 @@ export interface GreatestElongation {
 
 export interface JourneyOptions {
 	/** Élongation solaire minimale, en degrés, à laquelle Vénus compte comme visible. */
-	arcusVisionis?: number;
 	/** Demi-largeur, en heures, de la fenêtre autour d'un portail. */
 	gateWindowHours?: number;
 }
@@ -495,6 +503,7 @@ function organise(
 
 	const rank = new Map<number, number>();
 	const portal = new Map<number, Gate | Threshold>();
+	const numero = new Map<number, number>();
 
 	// La rétrogradation qui encadre la conjonction inférieure de fermeture : Vénus tourne autour
 	// d'elle comme autour de celle qui ouvre le cycle. On la cherche pour écarter les conjonctions
@@ -536,10 +545,11 @@ function organise(
 
 		// 3. Numérotation par date croissante, puis un chakra par rang dans l'ordre traditionnel.
 		const ordered = retenues.sort((a, b) => a.at.getTime() - b.at.getTime());
-		const sequence = portalSequence(star, ordered.length);
+		const steps = portalSteps(star, ordered.length);
 		ordered.forEach((c, i) => {
-			rank.set(c.at.getTime(), i + 1);
-			portal.set(c.at.getTime(), sequence[i]);
+			rank.set(c.at.getTime(), steps[i].rank);
+			numero.set(c.at.getTime(), steps[i].position);
+			portal.set(c.at.getTime(), steps[i].gate);
 		});
 	}
 
@@ -551,6 +561,7 @@ function organise(
 			portal: assigned !== undefined,
 			index: assigned ?? 0,
 			readOrder: assigned ?? 0,
+			position: numero.get(c.at.getTime()) ?? -1,
 			gate: portal.get(c.at.getTime()) ?? GATES[0],
 			dayOfPhase: Math.abs(daysBetween(c.star === 'morning' ? start.at : mid.at, c.at)),
 			open: assigned !== undefined && isGateOpen(c.at, now, windowHours)
@@ -595,7 +606,7 @@ export interface VenusJourney {
 }
 
 export function computeJourney(date: Date, options: JourneyOptions = {}): VenusJourney {
-	const arcusVisionis = options.arcusVisionis ?? DEFAULT_ARCUS_VISIONIS;
+	const arcusVisionis = ARCUS_VISIONIS;
 	const gateWindowHours = options.gateWindowHours ?? GATE_WINDOW_HOURS;
 
 	const { start, mid, end } = findEnclosingCycle(date);

@@ -6,11 +6,9 @@
 	 * recast on every keystroke: the route debounces the chosen moment (see
 	 * `src/routes/+page.svelte`).
 	 *
-	 * The one setting is the **arcus visionis**, the solar elongation below which Venus is
-	 * invisible, which is what fixes the length of the inframonde. It is an observational
-	 * parameter rather than a constant, so it is exposed instead of hard-coded. There is
-	 * deliberately no "orb" control: a portail is an exact instant, and no threshold makes
-	 * one more or less real.
+	 * Nothing here changes what the cycle means — only when it is read. The invisibility
+	 * threshold, the orb and the portal count are all fixed: they are observations, not
+	 * settings, and a cursor on them would suggest the sky is negotiable.
 	 */
 	interface Props {
 		/** The moment the chart shows — not necessarily "now". */
@@ -18,19 +16,10 @@
 		/** The real current time, so "maintenant" can be distinguished from a scrubbed date. */
 		now: Date;
 		busy?: boolean;
-		arcusVisionis: number;
 		onchange: (date: Date) => void;
-		onarcus: (deg: number) => void;
 	}
 
-	let {
-		value,
-		now,
-		busy = false,
-		arcusVisionis,
-		onchange,
-		onarcus
-	}: Props = $props();
+	let { value, now, busy = false, onchange }: Props = $props();
 
 	/** `datetime-local` wants a local-time string without a zone. */
 	function toInput(date: Date): string {
@@ -88,19 +77,6 @@
 	</div>
 
 	<div class="row settings">
-		<label class="field small">
-			<span class="eyebrow">Arcus visionis · {arcusVisionis}°</span>
-			<input
-				type="range"
-				min="2"
-				max="20"
-				step="1"
-				value={arcusVisionis}
-				oninput={(event) => onarcus(Number((event.currentTarget as HTMLInputElement).value))}
-			/>
-			<span class="hint">sous ce seuil d’élongation, Vénus est invisible</span>
-		</label>
-
 	</div>
 
 	<p class="keyboard faint">Flèches ← → pour un jour, maj + flèches pour une semaine, <kbd>n</kbd> pour maintenant.</p>
@@ -135,11 +111,6 @@
 		gap: 0.3rem;
 	}
 
-	.field.small {
-		flex: 1 1 180px;
-		min-width: 160px;
-	}
-
 	input[type='datetime-local'] {
 		background: #080a12;
 		border: 1px solid var(--line);
@@ -152,15 +123,9 @@
 	}
 
 	input[type='datetime-local']:focus-visible,
-	button:focus-visible,
-	input[type='range']:focus-visible {
+	button:focus-visible {
 		outline: 2px solid var(--venus);
 		outline-offset: 2px;
-	}
-
-	input[type='range'] {
-		width: 100%;
-		accent-color: var(--venus);
 	}
 
 	.steps {
@@ -192,11 +157,6 @@
 		background: #7ce0b022;
 		border-color: var(--venus);
 		color: var(--venus);
-	}
-
-	.hint {
-		font-size: 0.66rem;
-		color: var(--ink-ghost);
 	}
 
 	.keyboard {

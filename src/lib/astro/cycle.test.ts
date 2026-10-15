@@ -464,9 +464,12 @@ describe('la sélection des portails', () => {
 		expect(mort, 'la mort intentionnelle manque à la descente').toBeDefined();
 		expect(vie, 'la vie intentionnelle manque à l’ascension').toBeDefined();
 
-		// La mort est le dernier portail de la descente ; la vie le premier de l'ascension.
+		// La mort est le dernier portail de la descente et porte le numéro 0 ; la vie ouvre
+		// l'ascension et porte le 0 quand il y a huit portails, le 1 quand il y en a sept.
 		expect(mort!.index).toBe(Math.max(...journey.morning.portals.map((p) => p.index)));
+		expect(mort!.position).toBe(0);
 		expect(vie!.index).toBe(1);
+		expect(vie!.position).toBe(journey.evening.portals.length === 8 ? 0 : 1);
 
 		// Aucun des deux n'est un centre du corps.
 		for (const seuil of [mort!, vie!]) {
@@ -479,24 +482,36 @@ describe('la sélection des portails', () => {
 	it('déroule l’ascension depuis la vie : manifestation, créativité, etc.', () => {
 		// Le rang suit l'ordre du mythe, et la vie est toujours la première.
 		const n = journey.evening.portals.length;
-		const attendu = ['Vie intentionnelle']
-			.concat(
-				['Portail de la Manifestation', 'Portail de la Créativité', 'Portail du Pouvoir Personnel',
-				 'Portail de la Compassion', 'Portail de la Communication', 'Portail de la Vision',
-				 "Portail de l'Autorité"].slice(0, n - 1)
-			);
+		const attendu = ['Vie intentionnelle'].concat(
+			['Portail de la Manifestation', 'Portail de la Créativité', 'Portail du Pouvoir Personnel',
+			 'Portail de la Compassion', 'Portail de la Communication', 'Portail de la Vision',
+			 "Portail de l'Autorité"].slice(0, n - 1)
+		);
 		expect(
 			journey.evening.portals.slice().sort((a, b) => a.index - b.index).map((p) => p.gate.name)
 		).toEqual(attendu);
+		// Les numéros croissent de 0 à 7, ou de 1 à 7.
+		const positions = journey.evening.portals.slice().sort((a, b) => a.index - b.index).map((p) => p.position);
+		expect(positions).toEqual(n === 8 ? [0, 1, 2, 3, 4, 5, 6, 7] : [1, 2, 3, 4, 5, 6, 7]);
+	});
 
-		// Et la descente, de la couronne jusqu'à la mort, qui ferme.
-		const m = journey.morning.portals.length;
-		const attenduMatin = ["Portail de l'Autorité", 'Portail de la Vision', 'Portail de la Communication',
-			'Portail de la Compassion', 'Portail du Pouvoir Personnel', 'Portail de la Créativité',
-			'Portail de la Manifestation'].slice(0, m - 1).concat(['Mort intentionnelle']);
-		expect(
-			journey.morning.portals.slice().sort((a, b) => a.index - b.index).map((p) => p.gate.name)
-		).toEqual(attenduMatin);
+	it('numérote la descente de sept à zéro, et l’ascension de zéro à sept', () => {
+		for (const phase of [journey.morning, journey.evening]) {
+			const ordered = phase.portals.slice().sort((a, b) => a.index - b.index);
+			const positions = ordered.map((p) => p.position);
+			if (phase.star === 'morning') {
+				// La descente décroît : la couronne au 7, la mort au 0 s'il y a huit portails, la
+				// racine au 1 sinon.
+				const attendu = ordered.length === 8 ? [7, 6, 5, 4, 3, 2, 1, 0] : [7, 6, 5, 4, 3, 2, 1];
+				expect(positions).toEqual(attendu);
+			} else {
+				// L'ascension croît : la vie au 0 s'il y a huit portails, au 1 sinon.
+				const attendu = ordered.length === 8 ? [0, 1, 2, 3, 4, 5, 6, 7] : [1, 2, 3, 4, 5, 6, 7];
+				expect(positions).toEqual(attendu);
+			}
+			// Chaque portail garde sa couleur : elle vient du chakra, pas du numéro.
+			for (const p of ordered) expect(p.gate.color).toMatch(/^#[0-9a-f]{6}$/i);
+		}
 	});
 
 	it('vérifie la règle sur huit cycles', () => {

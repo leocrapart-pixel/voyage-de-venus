@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { DEFAULT_ARCUS_VISIONIS, computeJourney, type GatePassage } from '#lib/astro/cycle';
+	import { computeJourney, type GatePassage } from '#lib/astro/cycle';
 	import ChakraDiagram from '#lib/components/ChakraDiagram.svelte';
 	import CycleRing from '#lib/components/CycleRing.svelte';
 	import CycleTimeline from '#lib/components/CycleTimeline.svelte';
@@ -36,7 +36,6 @@
 	let debounce: ReturnType<typeof setTimeout> | undefined;
 	let busy = $state(false);
 
-	let arcusVisionis = $state(DEFAULT_ARCUS_VISIONIS);
 	let selected = $state<GatePassage | null>(null);
 
 	function commit(date: Date) {
@@ -49,7 +48,7 @@
 		}, 140);
 	}
 
-	const journey = $derived.by(() => computeJourney(new Date(committedMs), { arcusVisionis }));
+	const journey = $derived.by(() => computeJourney(new Date(committedMs)));
 
 	/** Held so the template re-reads the cycle when the settings change, and so the
 	 *  selected passage can be matched against the rebuilt cycle. */
@@ -66,11 +65,11 @@
 	const hero = $derived(
 		journey.activePassage
 			? {
-					title: `Portail ouvert · ${journey.activePassage.gate.name}`,
+					title: `Portail ${journey.activePassage.position} · ${journey.activePassage.gate.name}`,
 					line:
 						`Conjonction du ${formatDate(journey.activePassage.at)}, à ${formatZodiac(journey.activePassage.longitude)}. ` +
 						('garment' in journey.activePassage.gate
-							? `Le portail ${journey.activePassage.index} est ouvert, Vénus abandonne ${journey.activePassage.gate.garment}.`
+							? `Le portail ${journey.activePassage.position} est ouvert, Vénus abandonne ${journey.activePassage.gate.garment}.`
 							: `Seuil ${journey.activePassage.index} franchi, ${journey.activePassage.gate.name.toLowerCase()} : ${journey.activePassage.gate.meaning}`),
 					tone: 'open'
 				}
@@ -83,7 +82,7 @@
 				: journey.nextPassage
 					? {
 							title: `Prochain portail · ${journey.nextPassage.gate.name}`,
-							line: `Conjonction du ${formatDate(journey.nextPassage.at)}, à ${formatZodiac(journey.nextPassage.longitude)} — portail ${journey.nextPassage.index}.`,
+							line: `Conjonction du ${formatDate(journey.nextPassage.at)}, à ${formatZodiac(journey.nextPassage.longitude)} — portail ${journey.nextPassage.position}.`,
 							tone: 'next'
 						}
 					: { title: 'Cycle en cours', line: 'Aucun portail à venir.', tone: 'plain' }
@@ -124,9 +123,7 @@
 			value={moment}
 			{now}
 			{busy}
-			{arcusVisionis}
 			onchange={commit}
-			onarcus={(deg) => (arcusVisionis = deg)}
 		/>
 	</section>
 

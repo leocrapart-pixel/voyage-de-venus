@@ -51,7 +51,8 @@
 					isChakra,
 					name: passage.gate.name,
 					sub: isChakra ? `${gate.chakra ?? ''} · ${gate.sanskrit ?? ''}` : 'hors du corps',
-					index: passage.index,
+					index: passage.position,
+					rank: passage.index,
 					color: passage.gate.color,
 					state: stateOf(passage),
 					passage

@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/svelte';
 import { flushSync } from 'svelte';
 import Page from '../../routes/+page.svelte';
-import { computeJourney, passageForGate } from '../astro/cycle';
+import { computeJourney, passageForGate, PORTAL_VISIBILITY } from '../astro/cycle';
 import { CHAKRA_IMAGE, GATES, spotFor } from '../symbolic/gates';
 
 /**
@@ -73,7 +73,10 @@ describe('the page', () => {
 		expect(journey.activePassage).not.toBeNull();
 		const gate = journey.activePassage!.gate;
 		expect(screen.getByRole('heading', { level: 1 }).textContent).toContain(gate.name);
-		expect(screen.getByRole('heading', { level: 1 }).textContent).toContain('Portail ouvert');
+		// Le titre annonce le portail ouvert et son numéro — sept à zéro à la descente.
+		const titre = screen.getByRole('heading', { level: 1 }).textContent ?? '';
+		expect(titre).toMatch(/Portail \d+ · /);
+		expect(titre).toContain(gate.name);
 		// Le portail ouvert ce jour-là est un chakra : les jours de l'inframonde et le seuil n'en
 		// sont pas, même s'ils portent un rang.
 		expect(CHAKRA_KEYS.has(gate.key)).toBe(true);
@@ -223,19 +226,26 @@ describe('the page', () => {
 		expect(open.length).toBe(journey.conjunctions.filter((c) => c.open).length);
 	});
 
-	it('reacts to the arcus visionis setting rather than hiding it', async () => {
+	it('ne règle plus rien : le seuil d’invisibilité est fixe', async () => {
 		const { container } = await mountPage(GATE_DAY);
-		const band = container.querySelector('.band.under') as HTMLElement | null;
-		expect(band).not.toBeNull();
-		const before = band!.style.width;
-		const slider = screen.getByLabelText(/Arcus visionis/) as HTMLInputElement;
-		await fireEvent.input(slider, { target: { value: '14' } });
-		await vi.advanceTimersByTimeAsync(200);
-		flushSync();
-		// A wider arcus visionis makes the inframonde longer, so the band must grow.
-		const after = (container.querySelector('.band.under') as HTMLElement)?.style.width;
-		expect(after).not.toBe(before);
-		const journey = computeJourney(GATE_DAY, { arcusVisionis: 14 });
-		expect(journey.invisible!.days).toBeGreaterThan(computeJourney(GATE_DAY).invisible!.days);
+		// L'inframonde est bien tracé…
+		expect(container.querySelector('.band.under')).not.toBeNull();
+		// … mais plus aucun curseur ne le règle : une observation n'est pas un réglage.
+		expect(container.querySelectorAll("input[type='range']").length).toBe(0);
+		expect(screen.queryByLabelText(/Arcus/i)).toBeNull();
+		expect(screen.queryByText(/Arcus/i)).toBeNull();
+	});
+
+	it('garde le seuil d’invisibilité à dix degrés', () => {
+		// Le même seuil décide des portails et borne l'inframonde.
+		expect(PORTAL_VISIBILITY).toBe(10);
+		const journey = computeJourney(GATE_DAY);
+		expect(journey.arcusVisionis).toBe(10);
+		// Et toutes les conjonctions écartées sont bien sous ce seuil.
+		for (const phase of [journey.morning, journey.evening]) {
+			for (const c of phase.inframonde) {
+				expect(Math.abs(c.elongation)).toBeLessThanOrEqual(10);
+			}
+		}
 	});
 });

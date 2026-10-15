@@ -73,8 +73,8 @@
 				class:open={passage.open}
 				class:selected={selected?.at.getTime() === passage.at.getTime()}
 				style="left:{pct(passage.at)}%;--gate:{passage.gate.color}"
-				title="{passage.index} · {passage.gate.name} — {formatShortDate(passage.at)}, à {formatZodiac(passage.longitude)}"
-				aria-label="{passage.index}, {passage.gate.name}, {formatShortDate(passage.at)}, à {formatZodiac(passage.longitude)}"
+				title="{passage.position} · {passage.gate.name} — {formatShortDate(passage.at)}, à {formatZodiac(passage.longitude)}"
+				aria-label="{passage.position}, {passage.gate.name}, {formatShortDate(passage.at)}, à {formatZodiac(passage.longitude)}"
 				onclick={(event) => {
 					event.stopPropagation();
 					onselect?.(passage);

@@ -215,7 +215,7 @@
 						style="--gate:{passage.gate.color}"
 						onclick={() => onselect(passage)}
 					>
-						<span class="passage-gate">{passage.index} · {passage.gate.name}</span>
+						<span class="passage-gate">{passage.position} · {passage.gate.name}</span>
 						<span class="passage-when num">{formatShortDate(passage.at)}</span>
 					</button>
 				</li>

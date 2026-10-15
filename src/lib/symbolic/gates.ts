@@ -231,39 +231,63 @@ export function gatesForStar(star: 'morning' | 'evening'): readonly Gate[] {
 }
 
 /**
- * Les portails d'une phase, dans l'ordre de lecture.
+ * Les portails d'une phase, dans l'ordre de lecture, avec leur numéro.
  *
- * **La descente** : les sept chakras de la couronne à la racine, puis la mort intentionnelle en
- * huitième. Le seuil est au bout.
+ * Le numéro n'est pas le rang : il **décroît de sept à zéro** à la descente et **croît de zéro à
+ * sept** à l'ascension. La couronne porte le 7 et la racine le 0 en descendant ; à la remontée
+ * c'est l'inverse, la racine part de 0 et la couronne arrive à 7. Les deux seuils prennent le
+ * numéro qui reste :
  *
- * **L'ascension** : la vie intentionnelle d'abord, puis les sept chakras de la racine à la
- * couronne. Le seuil est à l'entrée — c'est par lui que Vénus reparaît.
+ * - **8 portails** : la descente va de 7 à 0, la mort comprise ; l'ascension va de 0 à 7, la vie
+ *   comprise ;
+ * - **7 portails** — quand la rétrogradation en a écarté un — : la descente va de 7 à 1, et
+ *   l'ascension de 1 à 7.
  *
- * Dans les deux cas le seuil occupe la place que la phase lui laisse : la huitième à la descente,
- * la première à l'ascension.
+ * Chaque portail garde sa couleur : c'est le numéro qui change, pas le centre.
  */
-export function portalSequence(
-	star: 'morning' | 'evening',
-	count: number
-): readonly (Gate | Threshold)[] {
+export interface PortalStep {
+	gate: Gate | Threshold;
+	/** Le rang dans l'ordre de lecture : 1 à 8. */
+	rank: number;
+	/** Le numéro affiché : 7 à 0 à la descente, 0 à 7 à l'ascension. */
+	position: number;
+}
+
+export function portalSteps(star: 'morning' | 'evening', count: number): readonly PortalStep[] {
 	const n = Math.max(0, Math.min(count, PORTAILS_MAXIMUM));
+	if (n === 0) return [];
+
 	if (star === 'morning') {
-		// Sept chakras, puis la mort : le seuil ferme.
-		const out: (Gate | Threshold)[] = GATES_DESCENDING.slice(0, Math.min(n, GATE_COUNT));
-		if (n > GATE_COUNT) out.push(THRESHOLDS['mort-intentionnelle']);
+		// La descente : les sept chakras de la couronne à la racine, puis la mort. Sept portails
+		// vont de 7 à 1, huit de 7 à 0.
+		const gateCount = Math.min(n, GATE_COUNT);
+		const withThreshold = n > GATE_COUNT;
+		const span = n - 1;
+		const out: PortalStep[] = GATES_DESCENDING.slice(0, gateCount).map((gate, i) => ({
+			gate,
+			rank: i + 1,
+			position: i === 0 ? span : span - i
+		}));
+		if (withThreshold) {
+			out.push({ gate: THRESHOLDS['mort-intentionnelle'], rank: n, position: 0 });
+		}
 		return out;
 	}
-	// La vie d'abord, puis les chakras de la racine vers la couronne : le seuil ouvre.
-	if (n === 0) return [];
-	const out: (Gate | Threshold)[] = [THRESHOLDS['vie-intentionnelle']];
-	out.push(...GATES_ASCENDING.slice(0, Math.min(n - 1, GATE_COUNT)));
+
+	// L'ascension : la vie d'abord, puis les chakras de la racine à la couronne. Elle ouvre dans les
+	// deux cas — huit portails de 0 à 7, sept portails de 1 à 7 —, parce que c'est par elle que
+	// Vénus reparaît : sans elle il n'y a pas d'ascension.
+	const out: PortalStep[] = [{ gate: THRESHOLDS['vie-intentionnelle'], rank: 1, position: n === PORTAILS_MAXIMUM ? 0 : 1 }];
+	GATES_ASCENDING.slice(0, Math.max(0, n - 1)).forEach((gate, i) => {
+		out.push({ gate, rank: i + 2, position: (n === PORTAILS_MAXIMUM ? 1 : 2) + i });
+	});
 	return out;
 }
 
 /** Le portail pour un rang de 1 à 8, dans une phase donnée. */
 export function portalForRank(rank: number, star: 'morning' | 'evening'): Gate | Threshold {
-	const sequence = portalSequence(star, PORTAILS_MAXIMUM);
-	return sequence[Math.min(Math.max(rank, 1), sequence.length) - 1] ?? GATES[0];
+	const steps = portalSteps(star, PORTAILS_MAXIMUM);
+	return steps[Math.min(Math.max(rank, 1), steps.length) - 1]?.gate ?? GATES[0];
 }
 
 /** Le portail d'un chakra, par sa clé. */

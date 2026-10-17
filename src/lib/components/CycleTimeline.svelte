@@ -64,6 +64,16 @@
 			<div class="band under" style="left:{invisiblePct.left}%;width:{invisiblePct.width}%"></div>
 		{/if}
 
+		<!-- Les trois jours de l'inframonde, en noir : le temps où Vénus a disparu. -->
+		{#each journey.inframondeDays as d (d.day.key)}
+			<div
+				class="jour"
+				style="left:{pct(d.at)}%"
+				title="{d.day.name} — {formatDate(d.at)}"
+				aria-label="{d.day.name}, {formatDate(d.at)}"
+			></div>
+		{/each}
+
 		<div class="mid" style="left:{midPct}%"></div>
 
 		{#each journey.conjunctions as passage (passage.at.getTime())}
@@ -95,6 +105,7 @@
 		<span><i style="background:#ff6b78"></i> rétrogradation</span>
 		<span><i style="background:#8b5cf6;opacity:0.55"></i> inframonde</span>
 		<span><i style="background:#8fb6ff"></i> conjonction supérieure</span>
+		<span><i style="background:#000;border:1px solid #4a4b57"></i> inframonde</span>
 		<span>chaque graduation est un portail</span>
 	</div>
 </div>
@@ -143,6 +154,18 @@
 		background: #8b5cf63d;
 		border-left: 1px solid #8b5cf688;
 		border-right: 1px solid #8b5cf688;
+	}
+
+	.jour {
+		position: absolute;
+		top: -6px;
+		bottom: -6px;
+		width: 6px;
+		margin-left: -3px;
+		border-radius: 3px;
+		background: #000;
+		border: 1px solid #3a3b45;
+		box-shadow: 0 0 8px #000;
 	}
 
 	.mid {

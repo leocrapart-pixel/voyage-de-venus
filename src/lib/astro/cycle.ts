@@ -13,11 +13,13 @@ import {
 import {
 	GATES,
 	PORTAILS_MAXIMUM,
+	UNDERWORLD_DAYS,
 	VISIBILITE_MINIMUM,
 	portalSteps,
 	type Gate,
 	type Threshold,
-	type PortalKey
+	type PortalKey,
+	type UnderworldDay
 } from '../symbolic/gates';
 
 /** Élongation solaire à partir de laquelle une conjonction devient un portail. */
@@ -174,6 +176,20 @@ export interface JourneyOptions {
 	/** Élongation solaire minimale, en degrés, à laquelle Vénus compte comme visible. */
 	/** Demi-largeur, en heures, de la fenêtre autour d'un portail. */
 	gateWindowHours?: number;
+}
+
+/**
+ * L'instant où Vénus atteint le seuil de visibilité, en s'éloignant de `from` dans le sens donné.
+ *
+ * C'est le coucher héliaque (en reculant) ou le lever héliaque (en avançant). Ce ne sont pas des
+ * conjonctions Lune-Vénus : c'est Vénus seule qui entre dans le Soleil ou en ressort.
+ */
+function heliacalCrossing(from: Date, direction: 1 | -1, threshold: number): Date {
+	for (let days = 0.01; days < 70; days += 0.01) {
+		const probe = shiftDays(from, direction * days);
+		if (Math.abs(venusElongation(probe)) >= threshold) return probe;
+	}
+	return from;
 }
 
 /** Élongation écliptique signée de Vénus : négative à l'ouest du Soleil. */
@@ -573,6 +589,16 @@ function organise(
  * Assemble the complete journey for a moment: the enclosing cycle, its two halves, the
  * retrograde, the inframonde, and every gate passage with its chakra.
  */
+/** Un des trois jours de l'inframonde, avec son instant. */
+export interface InframondeDay {
+	day: UnderworldDay;
+	at: Date;
+	/** Longitude de Vénus ce jour-là. */
+	longitude: number;
+	/** Élongation au Soleil, en degrés : elle reste sous le seuil. */
+	elongation: number;
+}
+
 export interface VenusJourney {
 	date: Date;
 	arcusVisionis: number;
@@ -599,6 +625,11 @@ export interface VenusJourney {
 	morning: Phase;
 	evening: Phase;
 	conjunctions: GatePassage[];
+	/**
+	 * Les trois jours de l'inframonde : le coucher héliaque, la conjonction inférieure, le lever
+	 * héliaque. Ils se lisent entre la descente et l'ascension, et ne passent par aucun chakra.
+	 */
+	inframondeDays: InframondeDay[];
 	/** Nombre de portails par phase : sept, ou huit. */
 	portalsParPhase: number;
 	activePassage: GatePassage | null;
@@ -667,6 +698,19 @@ export function computeJourney(date: Date, options: JourneyOptions = {}): VenusJ
 			.sort((a, b) => a.at.getTime() - b.at.getTime())[0] ??
 		null;
 
+	// Les trois jours de l'inframonde, autour de la conjonction inférieure qui ferme le cycle :
+	// le coucher héliaque avant, la conjonction elle-même, le lever héliaque après.
+	const inframondeDays: InframondeDay[] = [
+		{ day: UNDERWORLD_DAYS[0], at: heliacalCrossing(end.at, -1, arcusVisionis) },
+		{ day: UNDERWORLD_DAYS[1], at: end.at },
+		{ day: UNDERWORLD_DAYS[2], at: heliacalCrossing(end.at, 1, arcusVisionis) }
+	].map(({ day, at }) => ({
+		day,
+		at,
+		longitude: position(Body.Venus, at).longitude,
+		elongation: venusElongation(at)
+	}));
+
 	const invisible = findInvisibilityWindow(start, arcusVisionis);
 	const inInframonde = invisible
 		? date.getTime() >= invisible.start.getTime() && date.getTime() <= invisible.end.getTime()
@@ -708,6 +752,7 @@ export function computeJourney(date: Date, options: JourneyOptions = {}): VenusJ
 		morning: phaseOf('morning'),
 		evening: phaseOf('evening'),
 		conjunctions: passages,
+		inframondeDays,
 		activePassage,
 		nextPassage
 	};

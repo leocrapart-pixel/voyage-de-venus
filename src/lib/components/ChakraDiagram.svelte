@@ -242,6 +242,23 @@
 			</article>
 		{/if}
 
+		<!-- Les trois jours de l'inframonde : entre la descente qui meurt et l'ascension qui
+		     reparaît, Vénus est dans le Soleil. Gris foncé, presque noir : le temps de l'invisible. -->
+		<section class="inframonde" aria-label="Les trois jours de l’inframonde">
+			<span class="eyebrow">Inframonde · entre la descente et l’ascension</span>
+			<ol>
+				{#each journey.inframondeDays as d (d.day.key)}
+					<li style="--day:{d.day.color}">
+						<span class="marker">{d.day.position}</span>
+						<span class="text">
+							<span class="name">{d.day.name}<em>{formatDate(d.at)}</em></span>
+							<span class="meaning">{d.day.meaning}</span>
+						</span>
+					</li>
+				{/each}
+			</ol>
+		</section>
+
 		<p class="axis">
 			{#if activePassage}
 				Portail ouvert : {activePassage.index} · {activePassage.gate.name} — {formatDate(activePassage.at)}.
@@ -449,6 +466,64 @@
 		margin: 0.1rem 0 0;
 		font-size: 0.82rem;
 		color: var(--ink-dim);
+	}
+
+	.inframonde {
+		margin-top: 1rem;
+		padding: 0.8rem 0.9rem;
+		border: 1px solid #26262e;
+		border-radius: var(--radius-sm);
+		background: linear-gradient(160deg, #141419, #0b0b0f);
+	}
+
+	.inframonde ol {
+		list-style: none;
+		margin: 0.5rem 0 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.45rem;
+	}
+
+	.inframonde li {
+		display: flex;
+		gap: 0.65rem;
+		align-items: flex-start;
+	}
+
+	.inframonde .marker {
+		flex: none;
+		width: 1.45rem;
+		height: 1.45rem;
+		display: grid;
+		place-items: center;
+		border-radius: 50%;
+		border: 1px solid #4a4b57;
+		background: #17171d;
+		color: #9b9cab;
+		font-size: 0.7rem;
+		font-weight: 700;
+	}
+
+	.inframonde .name {
+		font-size: 0.78rem;
+		font-weight: 600;
+		color: #b9bac6;
+	}
+
+	.inframonde .name em {
+		margin-left: 0.5rem;
+		font-style: normal;
+		font-size: 0.68rem;
+		color: #5c5d68;
+	}
+
+	.inframonde .meaning {
+		display: block;
+		font-size: 0.7rem;
+		color: #7a7b87;
+		line-height: 1.4;
+		max-width: 60ch;
 	}
 
 	.axis {

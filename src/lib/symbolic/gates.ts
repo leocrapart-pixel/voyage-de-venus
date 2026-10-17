@@ -36,8 +36,11 @@ export type GateKey = 'crown' | 'brow' | 'throat' | 'heart' | 'solar' | 'sacral'
 /** Les deux seuils : la mort qui ferme la descente, la vie qui ouvre l'ascension. */
 export type ThresholdKey = 'mort-intentionnelle' | 'vie-intentionnelle';
 
+/** Les trois jours de l'inframonde, entre la descente et l'ascension. */
+export type UnderworldDayKey = 'inframonde-jour-1' | 'inframonde-jour-2' | 'inframonde-jour-3';
+
 /** Tout ce qu'un portail peut ouvrir. */
-export type PortalKey = GateKey | ThresholdKey;
+export type PortalKey = GateKey | ThresholdKey | UnderworldDayKey;
 
 export interface Gate {
 	/** 1..7, l'ordre de la descente — couronne d'abord, racine ensuite. */
@@ -208,6 +211,63 @@ export const THRESHOLDS: Readonly<Record<ThresholdKey, Threshold>> = {
 /** Ce portail est-il l'un des deux seuils ? */
 export function isThresholdKey(key: string): key is ThresholdKey {
 	return key === 'mort-intentionnelle' || key === 'vie-intentionnelle';
+}
+
+/**
+ * Les trois jours de l'inframonde.
+ *
+ * Entre la mort qui ferme la descente et la vie qui ouvre l'ascension, Vénus est dans le Soleil :
+ * elle a disparu. C'est la traversée, et elle dure trois jours symboliques — le coucher héliaque,
+ * la conjonction inférieure, le lever héliaque. Ils n'ont pas de chakra : ils sont **sous la
+ * terre**, et leur couleur est le gris foncé du temps où rien ne se voit.
+ *
+ * Trois entrées, pas des conjonctions Lune-Vénus : ce sont les instants du ciel qui marquent la
+ * descente aux enfers et la remontée.
+ */
+export interface UnderworldDay {
+	/** -1, -2, -3 : ils se lisent **après** la mort, en dessous de zéro. */
+	position: number;
+	key: UnderworldDayKey;
+	name: string;
+	meaning: string;
+	/** Gris foncé, presque noir : le temps de l'invisible. */
+	color: string;
+	deep: string;
+}
+
+export const UNDERWORLD_DAYS: readonly UnderworldDay[] = [
+	{
+		position: -1,
+		key: 'inframonde-jour-1',
+		name: 'Inframonde jour 1',
+		meaning:
+			'Vénus entre dans le Soleil, au coucher héliaque. Inanna meurt : ce qu’elle a lâché aux sept portes la précède dans le Grand En-Bas.',
+		color: '#2a2b33',
+		deep: '#15161b'
+	},
+	{
+		position: -2,
+		key: 'inframonde-jour-2',
+		name: 'Inframonde jour 2',
+		meaning:
+			'La conjonction inférieure : Vénus passe entre la Terre et le Soleil. La traversée se poursuit sans lumière — Inanna est jugée, mise à mort et suspendue.',
+		color: '#1e1f26',
+		deep: '#101116'
+	},
+	{
+		position: -3,
+		key: 'inframonde-jour-3',
+		name: 'Inframonde jour 3',
+		meaning:
+			'Vénus ressort du Soleil, au lever héliaque : elle reparaît en étoile du soir. Inanna remonte, dépouillée, et la vie intentionnelle peut commencer.',
+		color: '#3a3b45',
+		deep: '#1b1c22'
+	}
+] as const;
+
+/** Ce portail est-il un jour de l'inframonde ? */
+export function isUnderworldKey(key: string): key is UnderworldDayKey {
+	return key.startsWith('inframonde-jour-');
 }
 
 /** Élongation solaire minimale pour que Vénus soit tenue pour visible. */
